@@ -27,7 +27,7 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "node --test 'dist/test/**/*.test.js'"
+    "test": "node --test dist/test/installer.test.js"
   },
   "repository": {
     "type": "git",
