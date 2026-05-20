@@ -233,7 +233,14 @@ async function install(opts: InstallOptions): Promise<void> {
   const installedFiles: Array<{ path: string; sha256: string }> = [];
   for (const w of writes) {
     await mkdir(dirname(w.to), { recursive: true });
-    await cp(w.from, w.to, { recursive: true, force: true });
+    try {
+      await cp(w.from, w.to, { recursive: true, force: true });
+    } catch (err) {
+      spinner.stop(`Error installing ${w.from}`);
+      console.error(`\nFailed to copy:\n  from: ${w.from}\n  to:   ${w.to}`);
+      console.error(`Reason: ${(err as NodeJS.ErrnoException).message}`);
+      process.exit(1);
+    }
     spinner.message(`✔ ${w.to}`);
   }
 
@@ -442,19 +449,38 @@ const noAgents = args.includes('--no-agents');
 const noBin = args.includes('--no-bin');
 
 // Parse --skills loop-plan,loop-debug or --skills loop-plan --skills loop-debug
+const ALL_SKILL_NAMES = new Set<string>(SKILLS.map(s => s.value));
 const skillArgs: SkillName[] = [];
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--skills' && args[i + 1]) {
-    skillArgs.push(...(args[i + 1].split(',') as SkillName[]));
+    const names = args[i + 1].split(',').map(s => s.trim()).filter(Boolean);
+    const invalid = names.filter(n => !ALL_SKILL_NAMES.has(n));
+    if (invalid.length > 0) {
+      console.error(`Unknown skill(s): ${invalid.join(', ')}`);
+      console.error(`Available: ${[...ALL_SKILL_NAMES].join(', ')}`);
+      process.exit(1);
+    }
+    skillArgs.push(...(names as SkillName[]));
     i++;
   }
 }
 
 // Parse --agents spec-reviewer,research-agent or --agents spec-reviewer --agents research-agent
+const ALL_AGENT_NAMES = new Set<string>(
+  (Object.values(AGENT_GROUPS) as ReadonlyArray<ReadonlyArray<{ value: string }>>)
+    .flatMap(g => g.map(a => a.value))
+);
 const agentArgs: AgentName[] = [];
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--agents' && args[i + 1]) {
-    agentArgs.push(...(args[i + 1].split(',') as AgentName[]));
+    const names = args[i + 1].split(',').map(s => s.trim()).filter(Boolean);
+    const invalid = names.filter(n => !ALL_AGENT_NAMES.has(n));
+    if (invalid.length > 0) {
+      console.error(`Unknown agent(s): ${invalid.join(', ')}`);
+      console.error(`Run without --agents to see the interactive picker, or check docs/agents/index.md`);
+      process.exit(1);
+    }
+    agentArgs.push(...(names as AgentName[]));
     i++;
   }
 }
