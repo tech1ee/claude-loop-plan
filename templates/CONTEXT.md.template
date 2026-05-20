@@ -1,0 +1,14 @@
+# Domain Glossary
+
+_Add domain-specific terms here. These are used by loop-plan Phase 1 explorers
+to map modules using the project's vocabulary rather than generic names._
+
+## Terms
+
+- **<Term>**: <definition — what it means in this codebase>
+
+## Module map
+
+_Optional: document major modules and their single responsibility._
+
+- `<module>`: <one-line responsibility>

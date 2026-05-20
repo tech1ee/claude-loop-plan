@@ -30,9 +30,11 @@ For each library researched:
 
 Be concise. Only include information relevant to the current task.
 
-## Vault-first research (when `~/Documents/expertise/_research/` exists)
+## Date-constrained search (mandatory)
 
-Before WebSearching a topic, run `ls ~/Documents/expertise/_research/ 2>/dev/null` and grep filenames for the topic. If a relevant artifact has a date inside the cutoff, cite it instead of re-searching. Fall back to WebSearch only when vault has no recent coverage.
+Every WebSearch query MUST append `after:<YYYY>-01-01 <YYYY>` using the current year from the `currentDate` session context variable. Example for 2026: append `after:2026-01-01 2026`.
+
+Never issue a WebSearch without this constraint. Every fetched source must have a verifiable post-cutoff date — via `<meta property="article:published_time">`, `<time>` element, JSON-LD `datePublished`, URL date pattern, or explicit version release date. Discard undated sources — never cite them.
 
 ## Delivery discipline (mandatory — prevents context-exhaustion non-delivery)
 

@@ -1,0 +1,20 @@
+# Project: <PROJECT_NAME>
+
+## Architecture compliance
+
+This project uses ADRs in `.claude/decisions/`.
+
+At session start: run `new-adr.py list --root .` (or `Glob(".claude/decisions/*.md")`) to load accepted ADRs. Treat each accepted ADR as a hard constraint. If a proposed change contradicts an accepted ADR, surface it as an architecture violation before proceeding.
+
+## Workflow
+
+| Task | Skill |
+|---|---|
+| New feature | `/loop-plan` |
+| Bug fix | `/loop-debug` |
+| Small targeted change | phases 1–5 |
+| Trivial | just do it |
+
+## Context
+
+Domain vocabulary is in `CONTEXT.md`. Use it in Phase 1 codebase exploration to map modules with the project's own terms.

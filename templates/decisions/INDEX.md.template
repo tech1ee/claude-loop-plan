@@ -1,0 +1,10 @@
+# Architecture Decision Records
+
+| ID | Status | Title |
+|---|---|---|
+| — | — | _No decisions yet_ |
+
+---
+
+_Add decisions with: `new-adr.py create --root . --slug <kebab> --title "<title>"`_
+_Accepted ADRs are hard constraints — do not override without a superseding ADR._

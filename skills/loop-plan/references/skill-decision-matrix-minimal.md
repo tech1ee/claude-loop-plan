@@ -82,6 +82,83 @@ All output flows through `~/.claude/bin/run-codex-review.sh`.
 | Detect new skip markers | `~/.claude/bin/test-integrity.py scan-skips <files...>` |
 | Run mutation testing terminal quality gate | dispatch `test-runner` agent with `mode: mutation` |
 
+## Mobile / platform stack
+
+| Task | Use |
+|---|---|
+| Android/KMP/Compose codebase exploration (Phase 1) | `android-kmp-explorer` subagent (read-only) |
+| Coroutine scope leak audit | `android-coroutine-scope-leak-auditor` subagent (read-only) |
+| FGS Android 14/15 compliance | `android-fgs-compliance-auditor` subagent (read-only) |
+| R8/ProGuard AGP 9 keep-rule audit | `android-r8-proguard-auditor` subagent (read-only) |
+| Baseline Profile setup completeness | `android-baseline-profile-checklister` subagent (read-only) |
+| iOS/SwiftUI codebase exploration (Phase 1) | `swiftui-explorer` subagent (read-only) |
+| Pre-App-Store-submission preflight | `ios-appstore-preflight-auditor` subagent (read-only) |
+| Codable semantic edge cases | `ios-codable-edge-auditor` subagent (read-only) |
+| Core Data migration eligibility | `ios-coredata-migration-auditor` subagent (read-only) |
+| KMP source-set topology audit | `kmp-bridging-topology-auditor` subagent (read-only) |
+| SKIE / Swift Export readiness | `kmp-swift-interop-readiness-auditor` subagent (read-only) |
+| macOS entitlement / sandbox consistency | `macos-entitlements-distribution-auditor` subagent (read-only) |
+| macOS notarytool CI pre-flight | `macos-notarization-preflight-auditor` subagent (read-only) |
+| NSViewRepresentable seam audit | `macos-appkit-swiftui-interop-auditor` subagent (read-only) |
+| Compose UI architecture design | `compose-architect` subagent |
+| KMP data layer design | `datalayer-architect` subagent |
+
+## Web — React / Next.js
+
+| Task | Use |
+|---|---|
+| React/Next.js/TypeScript codebase exploration (Phase 1) | `react-nextjs-explorer` subagent (read-only) |
+| Hooks misuse audit (stale closures, missing deps, conditional hooks) | `react-hooks-misuse-auditor` subagent (read-only) |
+| RSC / client boundary violations, data-fetch waterfall | `nextjs-rsc-boundary-auditor` subagent (read-only) |
+
+## Web — TypeScript / Node.js
+
+| Task | Use |
+|---|---|
+| `any` creep audit, unsafe type assertions, `@ts-ignore` usage | `typescript-strict-mode-auditor` subagent (read-only) |
+| Unhandled rejections, blocking event loop, async/callback mixing | `nodejs-async-safety-auditor` subagent (read-only) |
+
+## Web — Python / FastAPI / Django
+
+| Task | Use |
+|---|---|
+| Blocking calls in async context, asyncio anti-patterns | `python-async-correctness-auditor` subagent (read-only) |
+| Migration squash safety, ForeignKey cascade risks, N+1 queries | `django-fastapi-safety-auditor` subagent (read-only) |
+
+## Web — Vue / Nuxt
+
+| Task | Use |
+|---|---|
+| Destructured reactive state, watch cleanup, computed side effects | `vue-reactivity-pitfalls-auditor` subagent (read-only) |
+| SSR/CSR hydration mismatches, server-guard misuse | `nuxt-ssr-hydration-auditor` subagent (read-only) |
+
+## Universal code quality
+
+| Task | Use |
+|---|---|
+| SRP violation / God-class (LCOM4, LOC, field/method count) | `srp-godclass-auditor` subagent (read-only) |
+| Code duplication with Rule-of-Three gate | `dry-duplication-auditor` subagent (read-only) |
+| Cyclomatic + cognitive complexity, LOC/method | `complexity-long-method-auditor` subagent (read-only) |
+| Dependency-direction / import cycles / layer violations | `dip-dependency-direction-auditor` subagent (read-only) |
+| Naming smells: generic suffixes, Hungarian, acronym caps | `naming-conventions-auditor` subagent (read-only) |
+| Comment WHAT-vs-WHY violations, expired TODO/FIXME | `comment-quality-auditor` subagent (read-only) |
+| Speculative-generality / one-impl interfaces | `yagni-premature-abstraction-auditor` subagent (read-only) |
+| Pre-refactor characterization-test coverage gap audit | `char-test-coverage-auditor` subagent (read-only) |
+| MADR 4.0.0 ADR completeness | `adr-completeness-auditor` subagent (read-only) |
+
+## Phase 1 explorer selection (by stack)
+
+All explorers run on **Sonnet** — recall-bound, not reasoning-bound:
+
+| Stack | Explorer agent |
+|---|---|
+| Android / Kotlin / KMP / Compose | `android-kmp-explorer` |
+| iOS / SwiftUI | `swiftui-explorer` |
+| React / Next.js / TypeScript | `react-nextjs-explorer` |
+| Vue / Nuxt | generic `Explore` subagent (model: sonnet) with Vue 3 Composition API + Nuxt 3 SSR scope |
+| Python / Django / FastAPI | generic `Explore` subagent (model: sonnet) with async correctness + ORM scope |
+| Other | generic `Explore` subagent (model: sonnet) with stack-specific scope |
+
 ## Decision tracking
 
 | Task | Use |

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as p from '@clack/prompts';
+import { groupMultiselect } from '@clack/prompts';
 import { cp, chmod, mkdir, readFile, writeFile, access, readdir } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -66,18 +67,81 @@ const SKILLS = [
   { value: 'loop-debug', label: 'loop-debug', hint: '7-phase research-driven debugger (requires loop-plan)', requires: 'loop-plan' },
 ] as const;
 
-const AGENTS = [
-  { value: 'spec-reviewer', label: 'spec-reviewer', hint: 'verifies implementation matches spec' },
-  { value: 'code-quality-reviewer', label: 'code-quality-reviewer', hint: '11-dimension code quality gate' },
-  { value: 'research-agent', label: 'research-agent', hint: '5-step methodology research' },
-  { value: 'test-runner', label: 'test-runner', hint: 'runs test suites + mutation testing' },
-  { value: 'second-opinion', label: 'second-opinion', hint: 'cross-model Codex review (requires OPENAI_API_KEY)' },
-  { value: 'android-kmp-explorer', label: 'android-kmp-explorer', hint: 'Android/KMP codebase exploration' },
-  { value: 'swiftui-explorer', label: 'swiftui-explorer', hint: 'iOS/SwiftUI codebase exploration' },
-] as const;
+const AGENT_GROUPS = {
+  'Universal': [
+    { value: 'spec-reviewer',                      hint: 'spec compliance gate (Phase 7)' },
+    { value: 'code-quality-reviewer',              hint: '11-dimension quality sweep (Phase 7)' },
+    { value: 'research-agent',                     hint: 'library docs + best practices (Phase 3)' },
+    { value: 'test-runner',                        hint: 'multi-framework test executor (Phase 7)' },
+    { value: 'second-opinion',                     hint: 'cross-model Codex review (requires OPENAI_API_KEY)' },
+    { value: 'security-reviewer',                  hint: 'auth / injection / secrets audit' },
+    { value: 'srp-godclass-auditor',               hint: 'God-class + LCOM4 detector' },
+    { value: 'dry-duplication-auditor',            hint: 'Rule-of-Three duplication gate' },
+    { value: 'complexity-long-method-auditor',     hint: 'cyclomatic + cognitive complexity' },
+    { value: 'dip-dependency-direction-auditor',   hint: 'import cycles + layer violations' },
+    { value: 'naming-conventions-auditor',         hint: 'naming smell detector' },
+    { value: 'comment-quality-auditor',            hint: 'comment hygiene (WHAT vs WHY)' },
+    { value: 'yagni-premature-abstraction-auditor', hint: 'speculative-generality detector' },
+    { value: 'char-test-coverage-auditor',         hint: 'pre-refactor coverage gate' },
+    { value: 'adr-completeness-auditor',           hint: 'MADR 4.0.0 schema completeness' },
+  ],
+  'Android / KMP': [
+    { value: 'android-kmp-explorer',               hint: 'Android/KMP/Compose codebase exploration' },
+    { value: 'android-coroutine-scope-leak-auditor', hint: 'GlobalScope / viewModelScope leaks' },
+    { value: 'android-fgs-compliance-auditor',     hint: 'FGS Android 14/15 compliance' },
+    { value: 'android-r8-proguard-auditor',        hint: 'R8/ProGuard AGP 9 keep-rule audit' },
+    { value: 'android-baseline-profile-checklister', hint: 'Baseline Profile setup completeness' },
+  ],
+  'iOS / macOS': [
+    { value: 'swiftui-explorer',                   hint: 'iOS/SwiftUI codebase exploration' },
+    { value: 'ios-appstore-preflight-auditor',     hint: 'PrivacyInfo + Required Reason API preflight' },
+    { value: 'ios-codable-edge-auditor',           hint: 'Codable semantic edge cases' },
+    { value: 'ios-coredata-migration-auditor',     hint: 'Core Data migration eligibility' },
+    { value: 'kmp-bridging-topology-auditor',      hint: 'KMP source-set topology audit' },
+    { value: 'kmp-swift-interop-readiness-auditor', hint: 'SKIE / Swift Export readiness' },
+    { value: 'macos-entitlements-distribution-auditor', hint: 'entitlement / sandbox consistency' },
+    { value: 'macos-notarization-preflight-auditor',    hint: 'notarytool CI pre-flight' },
+    { value: 'macos-appkit-swiftui-interop-auditor',    hint: 'NSViewRepresentable seam audit' },
+  ],
+  'Architecture': [
+    { value: 'compose-architect',                  hint: 'Compose UI architecture + MVVM design' },
+    { value: 'datalayer-architect',                hint: 'KMP data layer — repos, Ktor, Room, Koin' },
+  ],
+  'React / Next.js': [
+    { value: 'react-nextjs-explorer',              hint: 'React/Next.js/TypeScript codebase exploration' },
+    { value: 'react-hooks-misuse-auditor',         hint: 'stale closures, missing deps, conditional hooks' },
+    { value: 'nextjs-rsc-boundary-auditor',        hint: 'RSC vs client boundaries, data-fetch waterfalls' },
+  ],
+  'TypeScript / Node.js': [
+    { value: 'typescript-strict-mode-auditor',     hint: 'any creep, unsafe casts, @ts-ignore usage' },
+    { value: 'nodejs-async-safety-auditor',        hint: 'unhandled rejections, blocking event loop' },
+  ],
+  'Python': [
+    { value: 'python-async-correctness-auditor',   hint: 'blocking calls in async context, asyncio pitfalls' },
+    { value: 'django-fastapi-safety-auditor',      hint: 'migration safety, cascade risks, N+1 queries' },
+  ],
+  'Vue / Nuxt': [
+    { value: 'vue-reactivity-pitfalls-auditor',    hint: 'destructured state loss, watch cleanup, computed SE' },
+    { value: 'nuxt-ssr-hydration-auditor',         hint: 'SSR/CSR hydration mismatches, server-guard misuse' },
+  ],
+} as const satisfies Record<string, Array<{ value: string; hint: string }>>;
+
+type AgentGroupName = keyof typeof AGENT_GROUPS;
+type AgentName = (typeof AGENT_GROUPS)[AgentGroupName][number]['value'];
+
+// Add label field derived from value for groupMultiselect display
+const AGENT_GROUPS_DISPLAY = Object.fromEntries(
+  Object.entries(AGENT_GROUPS).map(([group, agents]) => [
+    group,
+    (agents as ReadonlyArray<{ value: string; hint: string }>).map(a => ({
+      value: a.value,
+      label: a.value,
+      hint: a.hint,
+    })),
+  ])
+) as Record<AgentGroupName, Array<{ value: string; label: string; hint: string }>>;
 
 type SkillName = (typeof SKILLS)[number]['value'];
-type AgentName = (typeof AGENTS)[number]['value'];
 
 interface InstallOptions {
   dryRun: boolean;
@@ -112,13 +176,13 @@ async function install(opts: InstallOptions): Promise<void> {
   // ── agent selection ──
   let selectedAgents: AgentName[] = opts.agents ?? [];
   if (!opts.noAgents && selectedAgents.length === 0) {
-    const answer = await p.multiselect({
-      message: 'Which supporting agents to include?',
-      options: AGENTS.map(a => ({ value: a.value, label: a.label, hint: a.hint })),
+    const answer = await groupMultiselect({
+      message: 'Which agents to include? (groups shown — select any across groups)',
+      options: AGENT_GROUPS_DISPLAY,
       required: false,
     });
     if (p.isCancel(answer)) { p.cancel('Cancelled.'); process.exit(0); }
-    selectedAgents = (answer ?? []) as AgentName[];
+    selectedAgents = ((answer as string[]) ?? []) as AgentName[];
   }
 
   // ── conflict check ──
@@ -127,6 +191,10 @@ async function install(opts: InstallOptions): Promise<void> {
   for (const skill of selectedSkills) {
     const target = join(skillsDir, skill);
     if (await exists(target)) conflicts.push(skill);
+  }
+  for (const agent of selectedAgents) {
+    const target = join(CLAUDE_DIR, 'agents', `${agent}.md`);
+    if (await exists(target)) conflicts.push(agent);
   }
 
   if (conflicts.length > 0 && !opts.force && !opts.dryRun) {
@@ -211,6 +279,72 @@ async function install(opts: InstallOptions): Promise<void> {
 
   // Non-blocking update check (fire-and-forget)
   checkUpdate(VERSION);
+}
+
+async function initCommand(): Promise<void> {
+  p.intro('Claude Skills — Project Init');
+
+  const cwd = process.cwd();
+  const hasGit = await exists(join(cwd, '.git'));
+  const hasClaudeDir = await exists(join(cwd, '.claude'));
+  const hasCLAUDEmd = await exists(join(cwd, '.claude', 'CLAUDE.md'));
+  const hasContextMd = await exists(join(cwd, 'CONTEXT.md'));
+  const hasDecisions = await exists(join(cwd, '.claude', 'decisions'));
+  const hasDocs = await exists(join(cwd, 'docs'));
+
+  const isEmpty = !hasGit || (!hasClaudeDir && !hasContextMd && !hasDocs);
+
+  if (isEmpty) {
+    p.note('Empty or fresh project detected. Scaffolding foundation…', 'Init');
+  } else {
+    const missing = [
+      !hasCLAUDEmd && '.claude/CLAUDE.md',
+      !hasContextMd && 'CONTEXT.md',
+      !hasDecisions && '.claude/decisions/',
+    ].filter((x): x is string => Boolean(x));
+    if (missing.length === 0) {
+      p.outro('Project already has a complete foundation. Nothing to init.');
+      return;
+    }
+    p.note(`Existing project. Missing: ${missing.join(', ')}`, 'Init');
+  }
+
+  const proceed = await p.confirm({ message: 'Scaffold missing files?' });
+  if (p.isCancel(proceed) || !proceed) { p.cancel('Cancelled.'); return; }
+
+  const spinner = p.spinner();
+  spinner.start('Scaffolding…');
+
+  if (!hasCLAUDEmd) {
+    await mkdir(join(cwd, '.claude'), { recursive: true });
+    await cp(
+      join(PKG_ROOT, 'templates', 'CLAUDE.md.template'),
+      join(cwd, '.claude', 'CLAUDE.md')
+    );
+    spinner.message('✔ .claude/CLAUDE.md');
+  }
+
+  if (!hasDecisions) {
+    await mkdir(join(cwd, '.claude', 'decisions'), { recursive: true });
+    await cp(
+      join(PKG_ROOT, 'templates', 'decisions', 'INDEX.md.template'),
+      join(cwd, '.claude', 'decisions', 'INDEX.md')
+    );
+    spinner.message('✔ .claude/decisions/INDEX.md');
+  }
+
+  if (!hasContextMd) {
+    await cp(join(PKG_ROOT, 'templates', 'CONTEXT.md.template'), join(cwd, 'CONTEXT.md'));
+    spinner.message('✔ CONTEXT.md');
+  }
+
+  if (!hasDocs) {
+    await mkdir(join(cwd, 'docs'), { recursive: true });
+    spinner.message('✔ docs/');
+  }
+
+  spinner.stop('Foundation scaffolded.');
+  p.outro('Run claude-skills to install loop-plan + agents, then open a new Claude Code session.');
 }
 
 async function updateCommand(): Promise<void> {
@@ -300,7 +434,7 @@ async function uninstallCommand(): Promise<void> {
 // ── CLI entry ─────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-const cmdCandidates = ['update', 'list', 'verify', 'uninstall'];
+const cmdCandidates = ['update', 'list', 'verify', 'uninstall', 'init'];
 const cmd = cmdCandidates.includes(args[0] ?? '') ? args[0] : undefined;
 const dryRun = args.includes('--dry-run');
 const force = args.includes('--force');
@@ -316,8 +450,27 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
+// Parse --agents spec-reviewer,research-agent or --agents spec-reviewer --agents research-agent
+const agentArgs: AgentName[] = [];
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--agents' && args[i + 1]) {
+    agentArgs.push(...(args[i + 1].split(',') as AgentName[]));
+    i++;
+  }
+}
+
 if (cmd === 'update') { await updateCommand(); }
 else if (cmd === 'list') { await listCommand(); }
 else if (cmd === 'verify') { await verifyCommand(); }
 else if (cmd === 'uninstall') { await uninstallCommand(); }
-else { await install({ dryRun, force, noAgents, noBin, skills: skillArgs.length > 0 ? skillArgs : undefined }); }
+else if (cmd === 'init') { await initCommand(); }
+else {
+  await install({
+    dryRun,
+    force,
+    noAgents,
+    noBin,
+    skills: skillArgs.length > 0 ? skillArgs : undefined,
+    agents: agentArgs.length > 0 ? agentArgs : undefined,
+  });
+}

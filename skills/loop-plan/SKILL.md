@@ -254,10 +254,14 @@ Announce at start: "Using loop-plan skill. I will loop through exploration → q
   - Inspect existing test files for the touched code (search `**/test_<basename>*`, `**/*Test.kt`, `**/*Spec.swift`, etc.) before assigning coverage.
   - Apply the risk rubric from [`design-and-quality.md § Risk-level rubric`](references/design-and-quality.md) (HIGH = no tests + complex; MED = partial tests OR moderate complexity; LOW = well-tested + simple).
   - Reference [`design-and-quality.md § Refactoring trigger heuristics`](references/design-and-quality.md) for what counts as a smell.
-- Choose the right explorer for the stack (all run on **Sonnet 4.6** — recall-bound, not reasoning-bound):
+- Choose the right explorer for the stack using `state.resolution_maps.exploration` (built at Phase 0 step 3f). All run on **Sonnet 4.6** — recall-bound, not reasoning-bound:
   - **Android/Kotlin/KMP/Compose** → `android-kmp-explorer`
   - **iOS/SwiftUI** → `swiftui-explorer`
+  - **React/Next.js/TypeScript** → `react-nextjs-explorer`
+  - **Vue/Nuxt** → generic `Explore` subagent (`model: sonnet`) with Vue 3 Composition API + Nuxt 3 SSR scope
+  - **Python/Django/FastAPI** → generic `Explore` subagent (`model: sonnet`) with async correctness + ORM scope
   - **Other** → generic `Explore` subagent (`model: sonnet`) with stack-specific scope
+  - If the detected stack agent is not in `resolution_maps.exploration`: fall back to generic `Explore` subagent and emit "Missing tooling: <agent-name>" in Phase 4 Orchestration design.
 - Each subagent must report: file paths + line numbers + execution-flow traces + conventions observed.
 
 **After subagents return:**
@@ -452,6 +456,23 @@ Running `deep-researcher` skill inline in the main session writes 30-100 KB of W
 1. **Inventory is already fresh** (refreshed at Phase 0 step 3e). Skip the staleness check — go directly to querying the inventory for Phase 4 orchestration design. If `state.tool_inventory_refreshed_at` is missing (e.g., session resumed mid-loop from an older state file), run the staleness check + rebuild here as a fallback. Keep `state.current_phase = "3b"` for the duration; advance to `"4"` only on successful completion.
 2. **Do NOT dump the full JSON into the plan file or the planner context.** That's the MCP-Zero anti-pattern (injecting a large inventory degrades planning accuracy and burns tokens). Instead, load it silently and *query it per task* in Phase 4.
 3. For each clarification answer and each research finding, note which inventory entries are candidates by (a) stack match via `~/.claude/skills/loop-plan/references/skill-decision-matrix-minimal.md`, (b) name keyword match, (c) tool-requirement match (Bash vs read-only, background vs foreground).
+3d. **Build resolution maps** via jq queries against `~/.claude/tools-inventory.json`:
+  ```bash
+  # Exploration candidates (sonnet, read-only — no Bash, no Write)
+  jq '[.agents[] | select(.model == "sonnet") | select(.tools | index("Bash") | not) | select(.tools | index("Write") | not) | .name]' ~/.claude/tools-inventory.json
+
+  # Security-class agents
+  jq '[.agents[] | select(.description | test("security|auth|injection|secret"; "i")) | .name]' ~/.claude/tools-inventory.json
+
+  # Review gate agents (spec/quality)
+  jq '[.agents[] | select(.name | test("spec-reviewer|code-quality-reviewer|second-opinion")) | .name]' ~/.claude/tools-inventory.json
+
+  # Research agents
+  jq '[.agents[] | select(.name | test("research-agent|deep-researcher")) | .name]' ~/.claude/tools-inventory.json
+  ```
+  Store agent names only in `state.resolution_maps: { exploration: [...], security: [...], review_gate: [...], research: [...] }`.
+  Phase 4 Orchestration design uses these maps to name agents per task.
+  **Hard rule:** every agent name emitted in Phase 4 task→agent table MUST appear in the matching resolution map. If not: emit as "Missing tooling" — never fabricate.
 4. Load `references/tool-inventory.md` for the JSON schema + query recipes and `references/orchestration-design.md` for pattern-selection decision trees. These are progressive-disclosure references — only read them now, not upfront.
 
 **Hard rules:**
