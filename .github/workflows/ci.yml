@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  privacy-check:
+    name: Privacy grep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject personal paths
+        run: |
+          grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
+            --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
+            --include="*.sh" --include="*.json" 2>/dev/null
+          rc=$?
+          [ "$rc" -eq 1 ]
+
+      - name: Reject personal config files leaking into source
+        run: |
+          # vault-projects.json and personal-paths.md are private; skills may reference
+          # ~/Documents/expertise/ as documented optional vault integration (OK)
+          grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
+            skills/ agents/ bin/ commands/ ci/ src/ \
+            --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
+            2>/dev/null
+          rc=$?
+          [ "$rc" -eq 1 ]
+
+  unicode-check:
+    name: Hidden Unicode scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for hidden Unicode
+        run: python3 ci/check-unicode.py skills/ agents/
+
+  skill-safety:
+    name: Skill shell-block safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for dangerous shell commands
+        run: python3 ci/check-skill-safety.py skills/ agents/
+
+  checksum-verify:
+    name: Checksum integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify checksums.txt is current
+        run: |
+          python3 ci/generate-checksums.py
+          git diff --exit-code checksums.txt || {
+            echo "checksums.txt is out of date. Run: python3 ci/generate-checksums.py"
+            exit 1
+          }
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  python-tests:
+    name: Python CI script tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run CI script tests
+        run: |
+          python3 test/check-unicode.test.py
+          python3 test/check-skill-safety.test.py
+          python3 test/generate-checksums.test.py

@@ -1,0 +1,45 @@
+{
+  "name": "@loopskills/claude-skills",
+  "version": "0.1.0",
+  "description": "loop-plan + loop-debug for Claude Code — iterative research-driven planning and debugging skills",
+  "type": "module",
+  "bin": {
+    "claude-skills": "./dist/src/install.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/src/install.js",
+    "skills/",
+    "agents/",
+    "bin/",
+    "commands/",
+    "checksums.txt"
+  ],
+  "dependencies": {
+    "@clack/prompts": "^0.9"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node --test 'dist/test/**/*.test.js'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loopskills/claude-loop-plan"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai-agent",
+    "loop-plan",
+    "loop-debug",
+    "planning",
+    "tdd"
+  ],
+  "license": "MIT"
+}

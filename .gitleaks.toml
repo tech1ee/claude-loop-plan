@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "private-path"
+description = "Absolute path to home directory"
+regex = '''/Users/[a-zA-Z][a-zA-Z0-9_-]+/'''
+severity = "high"
+
+[[rules]]
+id = "private-email"
+description = "Personal email address pattern"
+regex = '''[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'''
+severity = "medium"

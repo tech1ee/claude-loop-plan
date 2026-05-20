@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write   # for --provenance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Run tests before publish
+        run: npm test
+
+      - name: Regenerate checksums
+        run: python3 ci/generate-checksums.py
+
+      - name: Privacy gate
+        run: |
+          grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
+            --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
+            --include="*.sh" --include="*.json" 2>/dev/null
+          rc=$?
+          [ "$rc" -eq 1 ]
+          grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
+            skills/ agents/ bin/ commands/ ci/ src/ \
+            --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" 2>/dev/null
+          rc=$?
+          [ "$rc" -eq 1 ]
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: checksums.txt
