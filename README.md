@@ -1,90 +1,159 @@
-# Claude Loop Skills
+<div align="center">
 
-**loop-plan** and **loop-debug** for [Claude Code](https://claude.ai/code) — a research-first iterative planner and a systematic debugger, delivered as a single npm package.
+<br>
 
-```
+# 🔄 Claude Loop Skills
+
+[![CI](https://github.com/tech1ee/claude-loop-plan/actions/workflows/ci.yml/badge.svg)](https://github.com/tech1ee/claude-loop-plan/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@loopskills/claude-skills?color=brightgreen&label=npm)](https://www.npmjs.com/package/@loopskills/claude-skills)
+[![Node.js ≥18](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+
+<br>
+
+</div>
+
+## Quickstart (30-second setup)
+
+1. Run the installer:
+
+```bash
 npx @loopskills/claude-skills
 ```
 
-## What you get
+2. Pick which skills and supporting agents to install. Everything goes into `~/.claude/` — nothing else is touched.
 
-| Skill | Invoke | What it does |
-|---|---|---|
-| **loop-plan** | `/loop-plan` | 7-phase iterative planner: explores codebase → asks clarifying questions → researches the internet → writes a plan → loops until you say "ship it" |
-| **loop-debug** | `/loop-debug` | 7-phase debugger: reproduces the bug as a failing test → investigates root cause → researches fix patterns → plans T0a regression + T-fix + T0b prevention → loops until resolved |
+3. Open [Claude Code](https://claude.ai/code) and type `/loop-plan` or `/loop-debug`.
 
-## Install
+That's it. You're ready to go.
 
-Requires Node.js ≥18. No global install needed — `npx` works:
+---
 
-```bash
-npx @loopskills/claude-skills
-```
+## Why These Skills Exist
 
-Or install globally for the `claude-skills` command:
+I built these skills to fix the most common failure modes I see when using Claude Code for real engineering work.
 
-```bash
-npm install -g @loopskills/claude-skills
-claude-skills
-```
+---
 
-The interactive installer lets you choose which skills and supporting agents to include. All files go into `~/.claude/` — nothing else is touched.
+## #1: The Agent Codes Before Understanding
 
-## Update
+> "Give me six hours to chop down a tree and I will spend the first four sharpening the axe."
+>
+> Abraham Lincoln
 
-```bash
-claude-skills update
-```
+**The Problem.** You describe a feature. Claude Code starts writing immediately. Three hundred lines in — sometimes five hundred — you realize the architecture is wrong. The wrong abstraction was chosen. An existing pattern wasn't followed. A critical edge case was missed. Reversing course now is expensive.
 
-Or update the package and re-run the installer:
+This isn't Claude's fault. It's doing what you asked. The problem is the workflow: describe → code. There's no research phase. No verification that Claude actually understood the codebase before touching it.
 
-```bash
-npm install -g @loopskills/claude-skills@latest
-claude-skills --force
-```
+**The Fix** is to use `/loop-plan`. Before writing a single line, it:
 
-## Usage
+- Explores your codebase with parallel read-only agents — finding similar features, mapping upstream consumers, discovering existing tests
+- Asks only the questions that can't be answered by reading the code
+- Searches the web with today's date — not training-data assumptions from eighteen months ago
+- Writes a plan with test specs per task, ADRs for architecture decisions, and an orchestration design
 
-After install, open Claude Code and type:
+Then it loops. You review the plan, ask for more research, add questions, or say **"ship it."** Only then does Claude start coding.
 
-- `/loop-plan` — start a planning session for a new feature or significant change
-- `/loop-debug` — start a debugging session for a non-trivial bug
+---
 
-Both skills loop through research and questions until you choose "Ship it" to begin execution.
+## #2: The Agent Guesses Instead of Asking
+
+> "No-one knows exactly what they want."
+>
+> David Thomas & Andrew Hunt, [The Pragmatic Programmer](https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/)
+
+**The Problem.** When something is unclear, Claude fills in the gap. Sometimes it guesses right. Often it doesn't — and the guess is buried 200 lines deep in an implementation before you see it. By then, reversing the assumption is a real cost.
+
+The instinct is to ask the user for everything upfront. But that's the other failure mode: twenty clarifying questions before any work begins, most of which Claude could have answered by just reading the codebase.
+
+**The Fix** is Phase 2 of `/loop-plan`. After exploring the codebase, Claude asks only the decisions that genuinely can't be inferred — longevity of the feature, consistency model, persistence strategy. Everything else it figures out from the code. The result is 2–3 targeted questions instead of twenty generic ones.
+
+---
+
+## #3: The Patch Doesn't Fix The Bug
+
+> "It's not a bug — it's an undocumented feature."
+>
+> Unknown, but lived by everyone who's shipped a fix that came back
+
+**The Problem.** You describe a bug. Claude patches the symptom. Tests pass. You ship it. Three months later the same root cause manifests differently — a slightly different code path, a new caller, a different input shape. The fix never addressed why it broke, only that it broke.
+
+Or worse: the "fix" didn't actually fix the bug at all. It just moved the failure somewhere less visible.
+
+**The Fix** is to use `/loop-debug`. The first thing it does — before any investigation — is write a regression test that reproduces the failure. This test must fail (RED) before the fix, and pass (GREEN) after. No exceptions.
+
+Only then does Claude investigate root cause. It plans a minimal fix (T-fix) and a prevention design (T0b) — tests and structural changes that make the bug class harder to reintroduce. At Standard intensity, it also runs mutation testing to verify the test suite actually got stronger after the fix, not weaker.
+
+---
+
+## Reference
+
+### Planning
+
+- [**`/loop-plan`**](docs/loop-plan.md) — 7-phase iterative planner: explores codebase → clarifies decisions → researches current patterns → writes plan → loops until you say "ship it" → executes with review gates
+
+### Debugging
+
+- [**`/loop-debug`**](docs/loop-debug.md) — 7-phase debugger: regression test written before investigation → root-cause analysis → fix pattern research → minimal fix + prevention design → intensity-gated execution with mutation testing
+
+### Supporting agents
+
+The installer optionally adds agents that the skills use at runtime:
+
+- [`spec-reviewer`](docs/agents.md#spec-reviewer) — verifies implementation matches the plan spec (Phase 7 gate)
+- [`code-quality-reviewer`](docs/agents.md#code-quality-reviewer) — 11-dimension code quality review (Phase 7 gate)
+- [`research-agent`](docs/agents.md#research-agent) — 5-step methodology research with date verification (Phase 3)
+- [`test-runner`](docs/agents.md#test-runner) — test suite execution + mutation testing (Phase 7)
+- [`second-opinion`](docs/agents.md#second-opinion) — cross-model Codex review, requires `OPENAI_API_KEY` (Phase 6)
+- [`android-kmp-explorer`](docs/agents.md#android-kmp-explorer) — Android/KMP/Compose codebase exploration (Phase 1)
+- [`swiftui-explorer`](docs/agents.md#swiftui-explorer) — iOS/SwiftUI codebase exploration (Phase 1)
+
+---
+
+## Documentation
+
+| | |
+|---|---|
+| 📖 [loop-plan guide](docs/loop-plan.md) | Phase-by-phase reference, tips, example sessions |
+| 🐛 [loop-debug guide](docs/loop-debug.md) | Regression-test contract, intensity levels, workflow |
+| 🤖 [Agents reference](docs/agents.md) | What each agent does and when it runs |
+| ⚙️ [CLI reference](docs/cli.md) | All flags, sub-commands, environment variables |
+| 🔧 [How it works](docs/how-it-works.md) | File layout, update mechanism, architecture |
+| 📝 [Changelog](CHANGELOG.md) | Version history |
+
+---
 
 ## Verify integrity
 
-Every release ships a `checksums.txt`. Verify your install matches:
+Every release ships `checksums.txt` with SHA-256 digests of all installed files:
 
 ```bash
-# In the npm package directory (or download from the GitHub release)
+cd $(npm root -g)/@loopskills/claude-skills
 sha256sum -c checksums.txt
 ```
 
-## Uninstall
+Or download `checksums.txt` from the [GitHub release](https://github.com/tech1ee/claude-loop-plan/releases) and verify the files in `~/.claude/` directly.
+
+---
+
+## Security
+
+The installer has no `postinstall` hook — nothing runs automatically on `npm install`. It only writes to `~/.claude/`, requires no elevated privileges, and shows every file write before it happens. See [SECURITY.md](SECURITY.md).
+
+---
+
+## Contributing
 
 ```bash
-claude-skills uninstall
+git clone https://github.com/tech1ee/claude-loop-plan
+cd claude-loop-plan
+npm install && npm run build && npm test
 ```
 
-## How it works
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, CI gates, and the release process.
 
-See [docs/how-it-works.md](docs/how-it-works.md) for the phase-by-phase breakdown.
-
-## Supporting agents
-
-The installer optionally installs agents that loop-plan's orchestration pipeline uses:
-
-| Agent | Role |
-|---|---|
-| `spec-reviewer` | Verifies implementation matches the plan spec |
-| `code-quality-reviewer` | 11-dimension code quality gate |
-| `research-agent` | 5-step methodology research |
-| `test-runner` | Runs test suites + mutation testing |
-| `second-opinion` | Cross-model Codex review (requires `OPENAI_API_KEY`) |
-| `android-kmp-explorer` | Android/KMP/Compose codebase exploration |
-| `swiftui-explorer` | iOS/SwiftUI codebase exploration |
+---
 
 ## License
 
-MIT
+[MIT](LICENSE)

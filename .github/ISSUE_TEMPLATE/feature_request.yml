@@ -1,0 +1,50 @@
+name: Feature request
+description: Suggest an improvement to a skill, agent, or the installer
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a feature request: if you've found a failure mode that the skills don't address, that's the most useful framing. What breaks? What should have happened?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      options:
+        - loop-plan — phase behavior
+        - loop-plan — plan output format
+        - loop-debug — phase behavior
+        - loop-debug — regression test contract
+        - Agents
+        - Installer / CLI
+        - New skill idea
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What failure mode or limitation prompted this?
+      description: The clearest requests start with a real scenario where the skill fell short.
+      placeholder: |
+        When I used /loop-plan on a TypeScript project, Phase 1 didn't find...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to see?
+      description: Describe the change. It's fine to be vague — concrete implementation ideas are a bonus.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Other approaches that could address the same problem.
+    validations:
+      required: false

@@ -41,5 +41,6 @@
     "planning",
     "tdd"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "author": "Arman Aralbayev <t3ch1ee@gmail.com>"
 }

@@ -1,0 +1,86 @@
+name: Bug report
+description: Something isn't working as described
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as you can.
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill is affected?
+      options:
+        - loop-plan
+        - loop-debug
+        - Installer / CLI
+        - Agent (spec-reviewer, code-quality-reviewer, etc.)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly. What did you see vs. what did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: What task or command triggered this?
+      placeholder: |
+        1. Typed `/loop-plan add offline caching`
+        2. Phase 1 ran, then...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Which phase did the problem occur in? (loop-plan / loop-debug)
+      options:
+        - Phase 0 — Seed
+        - Phase 1 — Exploration
+        - Phase 2 — Clarify gate
+        - Phase 3 — Research
+        - Phase 4 — Plan
+        - Phase 5 — Loop gate
+        - Phase 6 — Drift check / Execute
+        - Phase 7 — Execution
+        - Not phase-specific
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: Run `claude-skills list` to get the version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Claude Code client
+      options:
+        - CLI (terminal)
+        - VS Code extension
+        - JetBrains extension
+        - Desktop app
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Error messages, relevant skill output, project stack, etc.
+    validations:
+      required: false

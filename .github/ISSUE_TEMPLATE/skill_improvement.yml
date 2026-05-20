@@ -1,0 +1,65 @@
+name: Skill improvement
+description: A specific phase produced a bad plan, wrong questions, or poor research results
+labels: ["skill-quality"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for cases where a skill ran but produced low-quality output — a plan that missed something, questions that were too broad, research that was irrelevant, etc.
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Skill
+      options:
+        - loop-plan
+        - loop-debug
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Which phase produced poor output?
+      options:
+        - Phase 1 — Exploration (missed relevant code, wrong files, bad citations)
+        - Phase 2 — Clarify (asked wrong questions, missed important decisions)
+        - Phase 3 — Research (irrelevant sources, outdated info, missed key pattern)
+        - Phase 4 — Plan (bad task breakdown, missing test specs, wrong architecture)
+        - Phase 6 — Drift check (missed a real problem, or flagged a false positive)
+        - Phase 0 — T0a regression test (loop-debug — test didn't reproduce the bug)
+    validations:
+      required: true
+
+  - type: textarea
+    id: task
+    attributes:
+      label: What was your task or bug description?
+      description: Paste the exact text you gave the skill.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What did the skill produce?
+      description: Paste the relevant section of the plan or question output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should it have produced instead?
+      description: Be as specific as possible — what file/line/question/task was missing or wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: stack
+    attributes:
+      label: Project stack
+      description: Language, framework, rough repo size. Helps identify if this is stack-specific.
+      placeholder: "Android/Kotlin/Compose, ~50k LOC"
+    validations:
+      required: false
