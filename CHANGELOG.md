@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.2.2 — 2026-05-20
+
+**Agent updates (23 agents):**
+- `adr-completeness-auditor`, `char-test-coverage-auditor`, `comment-quality-auditor`, `complexity-long-method-auditor`, `dip-dependency-direction-auditor`, `dry-duplication-auditor`, `naming-conventions-auditor`, `research-agent`, `security-reviewer`, `srp-godclass-auditor`, `yagni-premature-abstraction-auditor` — updated to latest versions
+- `android-baseline-profile-checklister`, `android-coroutine-scope-leak-auditor`, `android-fgs-compliance-auditor`, `android-r8-proguard-auditor` — updated Android audit agents
+- `ios-appstore-preflight-auditor`, `ios-codable-edge-auditor`, `ios-coredata-migration-auditor`, `kmp-bridging-topology-auditor`, `kmp-swift-interop-readiness-auditor` — updated iOS/KMP agents
+- `macos-appkit-swiftui-interop-auditor`, `macos-entitlements-distribution-auditor`, `macos-notarization-preflight-auditor` — updated macOS agents
+
+**Skill updates:**
+- `loop-plan/SKILL.md` — Phase 1 explorer prompts refined; caveman-style compact subagent prompt guidance added
+- `loop-plan/references/skill-decision-matrix-minimal.md` — updated routing rules
+
+**Documentation:**
+- README `### Supporting agents` expanded from 7 → 40 agents, organized into 8 groups
+- `docs/agents.md` — full reference entries for all 40 agents (Role, Used in, Returns, thresholds)
+
+**Testing:**
+- `test/e2e-published.sh` — 24-scenario / 91-assertion E2E suite against the published tarball
+
 ## v0.1.0 — 2026-05-20
 
 Initial public release.

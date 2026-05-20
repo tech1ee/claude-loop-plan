@@ -31,3 +31,6 @@ Skip areas with no issues. If everything looks clean, say so in one line.
 
 Do NOT report: code style, performance, non-security concerns, theoretical issues requiring unlikely conditions.
 
+## Vault security ADRs
+
+Before review, scan `~/Documents/expertise/500-decisions/` for ADRs tagged `topic/security`, `topic/auth`, `topic/payments`, or `topic/secrets`. Cite any matching ADR-IDs in findings as policy references.

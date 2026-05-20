@@ -1,6 +1,6 @@
 {
   "name": "@loopskills/claude-skills",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "loop-plan + loop-debug for Claude Code — iterative research-driven planning and debugging skills",
   "type": "module",
   "bin": {
