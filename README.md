@@ -98,15 +98,71 @@ Only then does Claude investigate root cause. It plans a minimal fix (T-fix) and
 
 ### Supporting agents
 
-The installer optionally adds agents that the skills use at runtime:
+The installer optionally adds 40 agents across 8 groups. The skills use these at runtime — you pick which groups to install. Full reference: [docs/agents.md](docs/agents.md).
+
+**Universal** — used across all stacks:
 
 - [`spec-reviewer`](docs/agents.md#spec-reviewer) — verifies implementation matches the plan spec (Phase 7 gate)
 - [`code-quality-reviewer`](docs/agents.md#code-quality-reviewer) — 11-dimension code quality review (Phase 7 gate)
 - [`research-agent`](docs/agents.md#research-agent) — 5-step methodology research with date verification (Phase 3)
 - [`test-runner`](docs/agents.md#test-runner) — test suite execution + mutation testing (Phase 7)
 - [`second-opinion`](docs/agents.md#second-opinion) — cross-model Codex review, requires `OPENAI_API_KEY` (Phase 6)
+- [`security-reviewer`](docs/agents.md#security-reviewer) — auth/injection/secrets audit
+- [`srp-godclass-auditor`](docs/agents.md#srp-godclass-auditor) — God-class + LCOM4 cohesion detector
+- [`dry-duplication-auditor`](docs/agents.md#dry-duplication-auditor) — Rule-of-Three duplication gate
+- [`complexity-long-method-auditor`](docs/agents.md#complexity-long-method-auditor) — cyclomatic + cognitive complexity
+- [`dip-dependency-direction-auditor`](docs/agents.md#dip-dependency-direction-auditor) — import cycles + layer violations
+- [`naming-conventions-auditor`](docs/agents.md#naming-conventions-auditor) — naming smell detector
+- [`comment-quality-auditor`](docs/agents.md#comment-quality-auditor) — comment hygiene (WHAT vs WHY)
+- [`yagni-premature-abstraction-auditor`](docs/agents.md#yagni-premature-abstraction-auditor) — speculative-generality detector
+- [`char-test-coverage-auditor`](docs/agents.md#char-test-coverage-auditor) — pre-refactor characterization test coverage gate
+- [`adr-completeness-auditor`](docs/agents.md#adr-completeness-auditor) — MADR 4.0.0 schema completeness
+
+**Android / KMP:**
+
 - [`android-kmp-explorer`](docs/agents.md#android-kmp-explorer) — Android/KMP/Compose codebase exploration (Phase 1)
+- [`android-coroutine-scope-leak-auditor`](docs/agents.md#android-coroutine-scope-leak-auditor) — GlobalScope/viewModelScope leak detector
+- [`android-fgs-compliance-auditor`](docs/agents.md#android-fgs-compliance-auditor) — FGS Android 14/15 compliance
+- [`android-r8-proguard-auditor`](docs/agents.md#android-r8-proguard-auditor) — R8/ProGuard AGP 9 keep-rule audit
+- [`android-baseline-profile-checklister`](docs/agents.md#android-baseline-profile-checklister) — Baseline Profile setup completeness
+
+**iOS / macOS / KMP interop:**
+
 - [`swiftui-explorer`](docs/agents.md#swiftui-explorer) — iOS/SwiftUI codebase exploration (Phase 1)
+- [`ios-appstore-preflight-auditor`](docs/agents.md#ios-appstore-preflight-auditor) — PrivacyInfo + Required Reason API preflight
+- [`ios-codable-edge-auditor`](docs/agents.md#ios-codable-edge-auditor) — Codable semantic edge cases
+- [`ios-coredata-migration-auditor`](docs/agents.md#ios-coredata-migration-auditor) — Core Data migration eligibility
+- [`kmp-bridging-topology-auditor`](docs/agents.md#kmp-bridging-topology-auditor) — KMP source-set topology audit
+- [`kmp-swift-interop-readiness-auditor`](docs/agents.md#kmp-swift-interop-readiness-auditor) — SKIE / Swift Export readiness
+- [`macos-entitlements-distribution-auditor`](docs/agents.md#macos-entitlements-distribution-auditor) — entitlement/sandbox consistency
+- [`macos-notarization-preflight-auditor`](docs/agents.md#macos-notarization-preflight-auditor) — notarytool CI pre-flight
+- [`macos-appkit-swiftui-interop-auditor`](docs/agents.md#macos-appkit-swiftui-interop-auditor) — NSViewRepresentable seam audit
+
+**Architecture:**
+
+- [`compose-architect`](docs/agents.md#compose-architect) — Jetpack Compose UI architecture + MVVM design
+- [`datalayer-architect`](docs/agents.md#datalayer-architect) — KMP data layer: repos, Ktor, Room, Koin
+
+**React / Next.js:**
+
+- [`react-nextjs-explorer`](docs/agents.md#react-nextjs-explorer) — React/Next.js/TypeScript codebase exploration (Phase 1)
+- [`react-hooks-misuse-auditor`](docs/agents.md#react-hooks-misuse-auditor) — stale closures, missing deps, conditional hooks
+- [`nextjs-rsc-boundary-auditor`](docs/agents.md#nextjs-rsc-boundary-auditor) — RSC vs client boundaries, data-fetch waterfalls
+
+**TypeScript / Node.js:**
+
+- [`typescript-strict-mode-auditor`](docs/agents.md#typescript-strict-mode-auditor) — `any` creep, unsafe casts, `@ts-ignore` usage
+- [`nodejs-async-safety-auditor`](docs/agents.md#nodejs-async-safety-auditor) — unhandled rejections, blocking event loop
+
+**Python:**
+
+- [`python-async-correctness-auditor`](docs/agents.md#python-async-correctness-auditor) — blocking calls in async context, asyncio pitfalls
+- [`django-fastapi-safety-auditor`](docs/agents.md#django-fastapi-safety-auditor) — migration safety, cascade risks, N+1 queries
+
+**Vue / Nuxt:**
+
+- [`vue-reactivity-pitfalls-auditor`](docs/agents.md#vue-reactivity-pitfalls-auditor) — destructured state loss, watch cleanup, computed SE
+- [`nuxt-ssr-hydration-auditor`](docs/agents.md#nuxt-ssr-hydration-auditor) — SSR/CSR hydration mismatches, server-guard misuse
 
 ---
 

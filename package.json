@@ -28,7 +28,8 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "node --test dist/test/installer.test.js"
+    "test": "node --test dist/test/installer.test.js",
+    "test:e2e": "bash test/e2e-published.sh"
   },
   "repository": {
     "type": "git",
