@@ -15,22 +15,24 @@ jobs:
 
       - name: Reject personal paths
         run: |
-          grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
+          if grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
             --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
-            --include="*.sh" --include="*.json" 2>/dev/null
-          rc=$?
-          [ "$rc" -eq 1 ]
+            --include="*.sh" --include="*.json" 2>/dev/null; then
+            echo "ERROR: personal path found in source files"
+            exit 1
+          fi
 
       - name: Reject personal config files leaking into source
         run: |
           # vault-projects.json and personal-paths.md are private; skills may reference
           # ~/Documents/expertise/ as documented optional vault integration (OK)
-          grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
+          if grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
             skills/ agents/ bin/ commands/ ci/ src/ \
             --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
-            2>/dev/null
-          rc=$?
-          [ "$rc" -eq 1 ]
+            2>/dev/null; then
+            echo "ERROR: private config file reference found in source files"
+            exit 1
+          fi
 
   unicode-check:
     name: Hidden Unicode scan

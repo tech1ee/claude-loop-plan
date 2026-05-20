@@ -33,16 +33,19 @@ jobs:
 
       - name: Privacy gate
         run: |
-          grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
+          if grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
             --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
-            --include="*.sh" --include="*.json" 2>/dev/null
-          rc=$?
-          [ "$rc" -eq 1 ]
-          grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
+            --include="*.sh" --include="*.json" 2>/dev/null; then
+            echo "ERROR: personal path found in source files"
+            exit 1
+          fi
+          if grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
             skills/ agents/ bin/ commands/ ci/ src/ \
-            --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" 2>/dev/null
-          rc=$?
-          [ "$rc" -eq 1 ]
+            --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
+            2>/dev/null; then
+            echo "ERROR: private config file reference found in source files"
+            exit 1
+          fi
 
       - name: Publish
         run: npm publish --provenance --access public
