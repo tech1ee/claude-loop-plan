@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as p from '@clack/prompts';
-import { cp, chmod, mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { cp, chmod, mkdir, readFile, writeFile, access, readdir } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
@@ -179,8 +179,16 @@ async function install(opts: InstallOptions): Promise<void> {
   // ── collect checksums for receipt ──
   const receiptSpinner = p.spinner();
   receiptSpinner.start('Writing install receipt…');
-  const { glob } = await import('node:fs').then(() => import('glob'));
-  const allInstalled = await glob('**/*', { cwd: CLAUDE_DIR, nodir: true, dot: true });
+  const allInstalled = await (async function walk(dir: string, base: string): Promise<string[]> {
+    const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+    const files: string[] = [];
+    for (const e of entries) {
+      const rel = base ? `${base}/${e.name}` : e.name;
+      if (e.isDirectory()) files.push(...await walk(join(dir, e.name), rel));
+      else files.push(rel);
+    }
+    return files;
+  })(CLAUDE_DIR, '');
   for (const rel of allInstalled.slice(0, 200)) {
     try {
       const abs = join(CLAUDE_DIR, rel);
