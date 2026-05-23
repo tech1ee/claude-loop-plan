@@ -69,6 +69,8 @@ const SKILLS = [
 
 const AGENT_GROUPS = {
   'Universal': [
+    { value: 'loop-verifier',                      hint: 'goal-backward adversarial verifier (stage gates)' },
+    { value: 'test-writer',                        hint: 'separate TDD test author — anti-cheating separation of duties' },
     { value: 'spec-reviewer',                      hint: 'spec compliance gate (Phase 7)' },
     { value: 'code-quality-reviewer',              hint: '11-dimension quality sweep (Phase 7)' },
     { value: 'research-agent',                     hint: 'library docs + best practices (Phase 3)' },
