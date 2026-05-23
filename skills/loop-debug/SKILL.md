@@ -260,6 +260,26 @@ Up to **4 questions per AskUserQuestion call, max 2 calls per Phase 2 entry**. S
 - **Fix-shape:** Patch the bad path, revert the change that introduced it (if known via git blame), rewrite the buggy unit.
 - **Acceptance criteria:** What does "fixed" mean to the user beyond "T0a passes GREEN"? (E.g. specific user flow works, specific perf number holds, specific log line goes silent.)
 
+**Lift acceptance criteria into `must_haves` contract — HARD GATE (ADR-NEW-C):**
+
+After Phase 2 answers are written, synthesize the acceptance criteria + bug signature into `state.must_haves`:
+
+```
+must_haves:
+  truths:
+    - "T0a (regression test <bug-slug>) is GREEN after T-fix and stays GREEN."
+    - "<user's stated acceptance criterion — observable, non-placeholder>"
+  artifacts:
+    - { path: "<T0a test file>", provides: "regression test proving the bug is fixed" }
+    - { path: "<fixed file>", provides: "minimal fix touching only root-cause code" }
+  key_links:
+    - { from: "T0a", to: "T-fix", via: "test-integrity hash-pin + GREEN verification" }
+```
+
+Also set `state.goal` (one sentence: what fixed means) and `state.success_criteria[]`.
+
+**HARD GATE:** Do NOT advance to Phase 3 if the acceptance criteria are non-observable ("feels better", "doesn't crash sometimes") or missing. Re-fire the acceptance question with a concrete example. Cite ADR-NEW-C.
+
 ### Auto-write architecture-tagged clarifications as ADRs
 
 Same heuristic as loop-plan Phase 2 (cite ADR-0004). For each architecture-tagged answer (headers in the whitelist — `Architecture`, `Pattern`, `Storage`, `DI`, `State`, `API`, `Auth`), call:
@@ -361,6 +381,7 @@ Every fix in loop-debug emits exactly three tasks (one of each type per bug):
 - **TDD:** `test files: <paths from state.red_test_path>`; `coverage target: per intensity tier (see Phase 5)`; `mutation tool: per stack`; `mutation threshold: per intensity tier`.
 - **Anti-tamper:** test files locked via T17 hook + `_active_task_files.txt` until T-fix verifies.
 - **Reviewer:** none for T0a (test was written by test-writer in Phase 0 and verified RED).
+- **Cross-vendor validation:** After T0a is confirmed RED, dispatch `second-opinion stage:diff` on the T0a test file (cost-gated; `--security-class` if security bug). Verifies the regression test actually reproduces the bug as described — a different model reviewing the test logic catches false-fail ("crashes for unrelated reason") vs true-fail. Cite ADR-NEW-C, ADR-0023.
 
 #### T-fix — `T-fix-<slug>`
 
@@ -370,11 +391,14 @@ Every fix in loop-debug emits exactly three tasks (one of each type per bug):
   > 2. Touch the *minimum* code necessary. If you spot refactoring opportunities, report `DONE_WITH_CONCERNS — refactor_recommended` and DO NOT refactor inside this task.
   > 3. Do NOT modify the test files in `_active_task_files.txt` — they are read-only.
   > 4. Cite the confirmed root-cause hypothesis from `state.root_cause_hypotheses[]` in your fix commit message.
-- **Reviewer:** debug-mode `spec-reviewer` (override per [`references/debug-spec-reviewer.md`](references/debug-spec-reviewer.md)) → `code-quality-reviewer` (dimensions 9–10 always; 11 if intensity=hardened).
-- **Mutation gate:** `test-runner mode: mutation` after GREEN. Threshold per intensity (see Phase 5). **Post-fix score MUST be ≥ pre-fix score per ADR-0014.** Hard-block on regression.
+  > 5. Anti-gaming: (1) Do NOT hardcode return values for test inputs. (2) Do NOT branch on test fixture values. (3) Do NOT edit tests to fit wrong code. (4) Do NOT override `__eq__`/`__hash__`/`__bool__`. Cite ADR-NEW-D.
+- **Reviewer:** debug-mode `spec-reviewer` (override per [`references/debug-spec-reviewer.md`](references/debug-spec-reviewer.md)) → `code-quality-reviewer` (dimensions 9–10 always; 11 if intensity=hardened). **spec-reviewer is ALSO handed the must_haves truths and must confirm the fix satisfies the acceptance criteria — not only that T0a is GREEN.** Cite ADR-NEW-C.
+- **Cross-vendor validation (per-task — mandatory per ADR-NEW-C + ADR-0023):** After spec-reviewer + code-quality-reviewer pass, run `should-run-codex.py` on the T-fix diff. If RUN: dispatch `second-opinion stage:diff` on T-fix diff only. Advisory; HIGH findings surface to implementer for response. This is the user's primary directive: Codex reviews EACH debug task, not just the final diff. Cite ADR-NEW-C, ADR-0023.
+- **Mutation gate:** `test-runner mode: mutation` after GREEN. Threshold per intensity (see Phase 5). **Post-fix score MUST be ≥ pre-fix score per ADR-0014.** Hard-block on regression. **Non-skippable at standard+hardened** (only BUDGET_EXCEEDED and no-tool exemptions). Cite ADR-NEW-D.
 
 #### T0b — `T0b-prevention-design-<slug>`
 
+- **Cross-vendor validation:** After T0b is drafted, dispatch `second-opinion stage:diff` on the T0b prevention list (cost-gated). Codex reviews the proposed prevention measures for completeness and blind spots — a different vendor's perspective on "what would actually prevent this class of bug." Advisory. Cite ADR-NEW-C, ADR-0023.
 - **Output:** structured list of prevention recommendations, one per category from [`references/prevention-design.md`](references/prevention-design.md):
   - `lint-rule`
   - `type-constraint`
@@ -563,7 +587,23 @@ On Phase 6a CLEAN:
    - `security-reviewer` background pass after T-fix GREEN.
    - Mutation thresholds: 90 / 70 / 60 (vs 80 / 60 / 50 default per ADR-0009).
 5. **Promote ADRs to accepted.** For each ADR created at Phase 2 with `accepted_via_task: T-fix-<slug>`, promote `proposed → accepted` via `~/.claude/bin/new-adr.py accept`. Append Confirmation entries.
-6. **Update plan status to `shipped`** and write final state.json.
+
+5a. **Terminal acceptance check — loop-verifier (goal-backward gate, ADR-NEW-C):**
+
+After T0a GREEN + T-fix GREEN + mutation post≥pre verified + T0b drafted:
+
+```
+Dispatch loop-verifier with state.must_haves (full contract) + repo path.
+Verdict:
+  passed      → proceed to step 6 (ship).
+  gaps_found  → HALT. Write gaps to plan ## Acceptance Verification section.
+                Generate gap-closure tasks. Execute. Re-dispatch verifier.
+  human_needed → surface to user; do not set shipped unilaterally.
+```
+
+The verifier runs the 4-level artifact check + behavioral probes on the actual acceptance criteria — beyond "T0a GREEN," this checks the user's stated acceptance criterion from Phase 2 (e.g. "specific user flow works"). A GREEN T0a is necessary but not sufficient for a `passed` verdict. Cite ADR-NEW-C.
+
+6. **Update plan status to `shipped`** and write final state.json — ONLY after `loop-verifier.verification.status == "passed"` (or signed-off `human_needed`). **Never set shipped on task-count completion alone.** Cite ADR-NEW-C.
 
 ### Failure handling
 
@@ -643,9 +683,10 @@ Record the recommendation in the plan's `## Execution complete` section as an **
 
 When loop-debug ships a fix, the user gets:
 
-1. A **deterministically-failing regression test** that reproduces the specific bug (T0a, locked).
-2. A **minimal fix** that makes T0a GREEN without weakening the existing safety net (T-fix, mutation post ≥ pre).
-3. A **structured prevention list** for the bug class (T0b, advisory, user picks which to land).
-4. Updated ADRs reflecting any architecture decisions surfaced at Phase 2.
+1. A **deterministically-failing regression test** that reproduces the specific bug (T0a, locked, cross-vendor verified).
+2. A **minimal fix** that makes T0a GREEN without weakening the existing safety net (T-fix, mutation post ≥ pre, per-task Codex cross-vendor review).
+3. A **structured prevention list** for the bug class (T0b, advisory, cross-vendor reviewed, user picks which to land).
+4. A **loop-verifier goal-backward verdict** (`passed`) confirming the user's acceptance criteria are met — beyond "T0a passes GREEN" (ADR-NEW-C).
+5. Updated ADRs reflecting any architecture decisions surfaced at Phase 2.
 
 Anything less is not a loop-debug ship — it's a regular fix using a heavier process than needed.

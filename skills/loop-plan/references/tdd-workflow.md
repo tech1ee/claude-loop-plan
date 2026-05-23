@@ -151,6 +151,90 @@ Each `test-runner mode: mutation` invocation is bounded at 15 minutes wall-clock
 
 ---
 
+## Anti-cheating guardrails (ADR-NEW-D — applies at rigor=tdd-only and rigor=full)
+
+Research consensus (ImpossibleBench 2025, METR reward-hacking 2025, Meta ACH FSE-2025, TDD-Governance arxiv:2604.26615) shows prevention beats detection. The primary guarantee is structural; detection is the backstop.
+
+### Layered guardrails (applied per-task by the orchestrator — Phase 7b)
+
+**P1 — Separation of duties (load-bearing anti-cheat control)**
+
+The `test-writer` agent authors tests from the `Test behaviors:` spec **before** the implementer is dispatched. The implementer never writes the tests it must satisfy. The orchestrator:
+1. Dispatches `test-writer` subagent with task spec by-value → test-writer returns file paths + RED proof.
+2. Calls `test-integrity.py snapshot --task <id> --files <paths>` to hash-lock tests.
+3. Dispatches implementer — tests are read-only (PreToolUse hook blocks edits).
+4. Calls `test-integrity.py verify --task <id>` after GREEN — any tamper → HARD-BLOCK.
+
+**P5 — Strict anti-gaming prompt (applied in `implementer-prompt-addendum.md` tier-conditional section)**
+
+Explicit, concrete prohibition list (see addendum § Anti-gaming prohibitions). Aligned models show ~0% exploit rate (RHB May 2026 — RLHF-aligned) when prohibition is specific and concrete.
+
+**V2 — Guard-mutation (validate the oracle BEFORE impl)**
+
+Before dispatching the implementer, run:
+```bash
+~/.claude/bin/test-integrity.py guard-mutation --task <id> --files <test-files> --stub <path>
+```
+Applies 3–5 trivial breaks to a stub, asserts each spec test goes RED. Any test staying GREEN → tautological / assertion-free → HARD-BLOCK (do not proceed to implementer).
+
+**D1 — Impl-diff lint (cheat-detector)**
+
+After the implementer returns, BEFORE spec-reviewer:
+```bash
+~/.claude/bin/detect-test-gaming.py --diff <impl-diff> --test-files <test-files>
+```
+Flags: constants verbatim from test expecteds, branches on test-fixture input values, `__eq__`/`__hash__`/`__bool__` overrides outside dataclasses, `inspect.stack()`/`sys._getframe()` outside logging, sentinel-string prints. Any flag → HARD-BLOCK + re-dispatch implementer (max 2 retries).
+
+**D2 — Tautology scanner**
+
+After the implementer returns:
+```bash
+~/.claude/bin/detect-tautological-tests.py --test-files <test-files>
+```
+Flags: assertion-free tests, `expected = sut(input)`, zero-variance expecteds, over-mock ratio >50%. Any flag → HARD-BLOCK (re-dispatch test-writer, since the test was authored before impl, a flag here usually means a pre-existing tautology in the test — fix the test, then re-lock + re-impl).
+
+**V1 — Mutation floor (non-skippable when rigor∈{tdd-only,full})**
+
+Mutation gate is **mandatory**. The only valid exemptions are:
+- `BUDGET_EXCEEDED` (15-min wall-clock cap) — record `skipped — budget exceeded (15 min)` and advance.
+- `no tool configured for stack` — record `skipped — no tool for stack` and advance.
+
+Do NOT skip the mutation gate because "the tests look fine" or "it's a simple task." The mutation floor is the safety net; skipping it is the single biggest risk in fix work (ADR-0014).
+
+### PBT recipe (recommended-not-mandatory for invariant-bearing functions)
+
+After all tracer-bullet behaviors are GREEN, add a Property-Based Test (PBT) for functions with a mathematical invariant. PBT makes special-casing (the dominant cheat — ImpossibleBench: 49–54%) infeasible at scale.
+
+**Function-shape → invariant table:**
+
+| Shape | Invariant | Example |
+|---|---|---|
+| Round-trip (serializer/deserializer) | `decode(encode(x)) == x` | JSON, protobuf, Base64 |
+| Idempotent (normalizer, formatter) | `f(f(x)) == f(x)` | trim, normalize, deduplicate |
+| Commutative (merger, combiner) | `f(a,b) == f(b,a)` | union, sum, max |
+| Size-relation (filter, sort) | `len(f(x)) <= len(x)` | filter, unique |
+| Inverse-pair | `undo(do(x)) == x` | encrypt/decrypt, push/pop |
+| Monotone (rank, score) | `a <= b → f(a) <= f(b)` | priority queue, sort key |
+
+**Hypothesis (Python) recipe:**
+
+```python
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+@given(st.lists(st.integers()))
+@settings(max_examples=1000, deadline=5000)
+def test_sort_invariant(xs):
+    result = my_sort(xs)
+    assert len(result) == len(xs)          # size preserved
+    assert sorted(result) == sorted(xs)    # same elements
+    assert all(result[i] <= result[i+1] for i in range(len(result)-1))  # ordered
+```
+
+**PBT × mutation complementarity:** mutation kills off-by-one errors; PBT kills special-casing. Use both for security-tagged functions and any function that processes user-controlled input.
+
+---
+
 ## Tautological-test detection heuristic (Phase 6b second opinion)
 
 The `second-opinion` agent receives an extended `context_hint` for the test-suite review pass. It flags:

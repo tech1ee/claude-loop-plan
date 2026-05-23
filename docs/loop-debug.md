@@ -87,6 +87,8 @@ A targeted `AskUserQuestion` to confirm:
 - **Fix shape** — minimal patch, refactor the surrounding code, or address the root class?
 - **Acceptance** — what does "fixed" look like? Is there an existing test we can point to?
 
+After your answers, Claude synthesizes the acceptance criteria into a `must_haves` contract — observable truths, required artifacts, key wiring links. **HARD GATE:** Cannot advance to Phase 3 if any acceptance criterion is non-observable ("feels faster", "doesn't crash sometimes"). The `loop-verifier` agent will check this contract at terminal acceptance — beyond just "T0a is GREEN."
+
 > [!NOTE]
 > Intensity (minimal/standard/hardened) is **not** chosen here. It's Phase 5 — after you've seen the root-cause findings and plan. This order matters: you can't know the right intensity until you know how deep the bug goes.
 
@@ -148,24 +150,29 @@ The intensity you choose gates the execution pipeline in Phase 6.
 ```
 T0a (RED) confirmed
   ↓
-Implement T-fix
+Implement T-fix  [per-task Codex cross-vendor review, cost-gated]
   ↓
 Run T0a → must be GREEN
   ↓
 Run full test suite
   ↓
-Spec-reviewer (at Standard+)
+Spec-reviewer: checks spec AND must_haves acceptance criteria (Standard+)
   ↓
 Mutation testing: post-fix score ≥ pre-fix score
   ↓
-T0b prevention tasks (at Standard+)
+T0b prevention tasks  [per-task Codex cross-vendor review] (Standard+)
   ↓
-Cross-model review (at Standard+)
+Cross-model review (Standard+)
   ↓
-Security pass (at Hardened)
+Security pass (Hardened)
+  ↓
+loop-verifier: 4-level artifact check + behavioral probes against must_haves
+  → passed     → ship
+  → gaps_found → HALT, generate gap-closure tasks, re-verify
+  → human_needed → surface to user
 ```
 
-If T0a is not GREEN after the fix, Claude returns to Phase 5.
+If T0a is not GREEN after the fix, Claude returns to Phase 5. `completion_state = "shipped"` is set only after `loop-verifier` returns `passed` or signed-off `human_needed`.
 
 ---
 
@@ -175,10 +182,13 @@ If T0a is not GREEN after the fix, Claude returns to Phase 5.
 |---|:---:|:---:|:---:|
 | T0a regression test | ✓ | ✓ | ✓ |
 | Full test suite | ✓ | ✓ | ✓ |
+| `must_haves` HARD GATE (Phase 2) | ✓ | ✓ | ✓ |
 | Spec-reviewer gate | — | ✓ | ✓ |
+| Spec-reviewer checks `must_haves` truths | — | ✓ | ✓ |
 | Mutation testing | — | ✓ | ✓ |
+| Per-task Codex cross-vendor review | — | ✓ | ✓ |
 | T0b prevention design | — | ✓ | ✓ (deep) |
-| Cross-model Codex review | — | ✓ | ✓ |
+| `loop-verifier` terminal acceptance | — | ✓ | ✓ |
 | Security pass | — | — | ✓ |
 | Code-quality-reviewer | — | — | ✓ |
 

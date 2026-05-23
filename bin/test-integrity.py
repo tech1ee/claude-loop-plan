@@ -20,10 +20,13 @@ Stdlib-only. macOS POSIX-clean.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
 import re
+import signal
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -347,6 +350,355 @@ def cmd_count_asserts(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- guard-mutation: source-level mutation testing of a SUT against its suite ---
+
+
+def _collect_docstring_ids(tree: ast.AST) -> set:
+    """Return id()s of Constant nodes that are docstrings.
+
+    A docstring is a `str` Constant that is the value of the first statement
+    (an ``ast.Expr``) in the body of a Module / ClassDef / FunctionDef /
+    AsyncFunctionDef. Such constants are equivalent mutants — rewriting them
+    never changes runtime behavior — so the string-literal mutation must skip
+    them. (We detect the pattern directly rather than via ast.get_docstring so
+    we get the NODE identity, not just the text.)
+    """
+    doc_ids: set = set()
+    docstring_owners = (
+        ast.Module,
+        ast.ClassDef,
+        ast.FunctionDef,
+        ast.AsyncFunctionDef,
+    )
+    for node in ast.walk(tree):
+        if isinstance(node, docstring_owners):
+            body = getattr(node, "body", None)
+            if body:
+                first = body[0]
+                if (
+                    isinstance(first, ast.Expr)
+                    and isinstance(first.value, ast.Constant)
+                    and isinstance(first.value.value, str)
+                ):
+                    doc_ids.add(id(first.value))
+    return doc_ids
+
+
+class _MutationVisitor(ast.NodeVisitor):
+    """Locates the first applicable node for each mutation kind.
+
+    Records the earliest matching AST node per category. Source rewriting is done
+    via ast.unparse on a deep-copied tree so each mutation yields a distinct,
+    syntactically valid source.
+
+    String-literal selection skips docstring constants (module/class/function/
+    method level): mutating a docstring is an equivalent mutant that always
+    survives, so it must not be chosen as the "first string literal".
+    """
+
+    def __init__(self) -> None:
+        self.first_return = None      # ast.Return with a non-None, non-NameConstant value
+        self.first_bool = None        # ast.Constant whose value is a bool
+        self.first_compare_op = None  # (compare_node, op_index)
+        self.first_number = None      # ast.Constant whose value is int/float (not bool)
+        self.first_string = None      # ast.Constant whose value is str (non-docstring)
+        self._docstring_ids: set = set()
+
+    def visit(self, node: ast.AST):
+        # When entering at a tree root, precompute the docstring-constant id set
+        # for that exact tree so the string-literal selection can skip them.
+        if isinstance(node, ast.Module):
+            self._docstring_ids = _collect_docstring_ids(node)
+        return super().visit(node)
+
+    def visit_Return(self, node: ast.Return) -> None:
+        if self.first_return is None and node.value is not None:
+            # Skip `return None` / bare-None returns.
+            if not (isinstance(node.value, ast.Constant) and node.value.value is None):
+                self.first_return = node
+        self.generic_visit(node)
+
+    def visit_Compare(self, node: ast.Compare) -> None:
+        if self.first_compare_op is None:
+            for idx, op in enumerate(node.ops):
+                if type(op) in _COMPARE_FLIP:
+                    self.first_compare_op = (node, idx)
+                    break
+        self.generic_visit(node)
+
+    def visit_Constant(self, node: ast.Constant) -> None:
+        value = node.value
+        if isinstance(value, bool):
+            if self.first_bool is None:
+                self.first_bool = node
+        elif isinstance(value, (int, float)):
+            if self.first_number is None:
+                self.first_number = node
+        elif isinstance(value, str):
+            if self.first_string is None and id(node) not in self._docstring_ids:
+                self.first_string = node
+        self.generic_visit(node)
+
+
+_COMPARE_FLIP = {
+    ast.Eq: ast.NotEq,
+    ast.NotEq: ast.Eq,
+    ast.Lt: ast.GtE,
+    ast.Gt: ast.LtE,
+    ast.LtE: ast.Gt,
+    ast.GtE: ast.Lt,
+}
+
+
+def _node_id(node: ast.AST) -> tuple:
+    """Stable position key to relocate the target node in a fresh tree copy."""
+    return (type(node).__name__, getattr(node, "lineno", -1), getattr(node, "col_offset", -1))
+
+
+def generate_mutations(source: str) -> list[tuple[str, str]]:
+    """Return a list of (description, mutated_source) tuples.
+
+    Each mutation is applied to a fresh parse of the original source, so the
+    mutations are independent. Mutations that do not apply or that produce
+    source identical to the original are skipped.
+    """
+    try:
+        base_tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    # HIGH-4: compute an UNPARSED baseline once. Comparing the mutated unparsed
+    # source against the raw original would mistake cosmetic reformatting (which
+    # ast.unparse always applies) for a real mutation. Roundtripping the original
+    # the same way removes that noise so true no-op mutations are correctly
+    # skipped. Wrapped in try/except: py3.9's ast.unparse has roundtrip bugs on
+    # exotic syntax — if even the baseline fails to roundtrip, there is nothing
+    # to compare against, so emit no mutations rather than crash.
+    try:
+        base_unparsed = ast.unparse(ast.parse(source))
+    except Exception:
+        return []
+
+    scout = _MutationVisitor()
+    scout.visit(base_tree)
+
+    mutations: list[tuple[str, str]] = []
+
+    def _emit(desc: str, mutate):
+        # HIGH-4: each mutation regenerates from a fresh parse and re-unparses.
+        # py3.9 ast.unparse can raise on otherwise-valid trees containing exotic
+        # syntax — wrap the WHOLE parse/mutate/unparse so one bad mutation is
+        # skipped gracefully instead of crashing the subcommand.
+        try:
+            tree = ast.parse(source)
+            target_visitor = _MutationVisitor()
+            target_visitor.visit(tree)
+            node = mutate(target_visitor)
+            if node is None:
+                return
+            mutated = ast.unparse(ast.fix_missing_locations(tree))
+        except Exception:
+            return
+        # Compare against the UNPARSED baseline, not the raw source, so cosmetic
+        # reformatting is not mistaken for a mutation and real no-ops are skipped.
+        if mutated.strip() == base_unparsed.strip():
+            return
+        mutations.append((desc, mutated + "\n"))
+
+    if scout.first_return is not None:
+        def _do_return(v):
+            node = v.first_return
+            if node is None:
+                return None
+            node.value = ast.Constant(value=None)
+            return node
+        _emit("return <expr> -> return None", _do_return)
+
+    if scout.first_bool is not None:
+        def _do_bool(v):
+            node = v.first_bool
+            if node is None:
+                return None
+            node.value = not node.value
+            return node
+        orig = scout.first_bool.value
+        _emit(f"flip boolean {orig} -> {not orig}", _do_bool)
+
+    if scout.first_compare_op is not None:
+        def _do_compare(v):
+            pair = v.first_compare_op
+            if pair is None:
+                return None
+            cmp_node, idx = pair
+            new_op_cls = _COMPARE_FLIP[type(cmp_node.ops[idx])]
+            cmp_node.ops[idx] = new_op_cls()
+            return cmp_node
+        old_op = type(scout.first_compare_op[0].ops[scout.first_compare_op[1]]).__name__
+        new_op = _COMPARE_FLIP[type(scout.first_compare_op[0].ops[scout.first_compare_op[1]])].__name__
+        _emit(f"flip comparison {old_op} -> {new_op}", _do_compare)
+
+    if scout.first_number is not None:
+        def _do_number(v):
+            node = v.first_number
+            if node is None:
+                return None
+            node.value = node.value + 1
+            return node
+        orig_n = scout.first_number.value
+        _emit(f"increment number {orig_n} -> {orig_n + 1}", _do_number)
+
+    if scout.first_string is not None:
+        def _do_string(v):
+            node = v.first_string
+            if node is None:
+                return None
+            node.value = node.value + "_MUT"
+            return node
+        _emit("append _MUT to first string literal", _do_string)
+
+    return mutations
+
+
+def cmd_guard_mutation(args: argparse.Namespace) -> int:
+    sut = Path(args.sut).expanduser()
+    if not sut.is_file():
+        die(f"--sut not found: {sut}")
+    cwd = Path(args.cwd).expanduser() if args.cwd else sut.resolve().parent
+    if not cwd.is_dir():
+        die(f"--cwd not a directory: {cwd}")
+
+    # HIGH-3: crash-recovery sidecar. The SUT is repeatedly mutated and restored
+    # during this run; a crash mid-mutation would otherwise leave a corrupted
+    # SUT on disk. The sidecar holds the canonical original bytes so a fresh run
+    # (or a SIGTERM/SIGINT handler) can always restore the SUT.
+    sidecar = sut.with_name(sut.name + ".guardmut.bak")
+
+    if sidecar.exists():
+        # A prior run crashed mid-mutation: the SUT on disk may be a mutant.
+        # The sidecar holds the TRUE original — restore the SUT from it and
+        # treat those bytes as the original for this run.
+        original_bytes = sidecar.read_bytes()
+        sut.write_bytes(original_bytes)
+    else:
+        original_bytes = sut.read_bytes()
+        sidecar.write_bytes(original_bytes)
+
+    try:
+        source = original_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        # Clean up the sidecar we may have just written before bailing out.
+        try:
+            sidecar.unlink()
+        except FileNotFoundError:
+            pass
+        die(f"--sut is not valid UTF-8: {sut}")
+
+    # HIGH-3: install signal handlers so a kill mid-mutation restores the SUT and
+    # removes the sidecar before exiting non-zero, instead of leaving a mutant on
+    # disk. Save and restore the previous handlers around the run.
+    def _on_signal(signum, frame):  # noqa: ANN001 — signal handler signature
+        try:
+            sut.write_bytes(original_bytes)
+        finally:
+            try:
+                sidecar.unlink()
+            except FileNotFoundError:
+                pass
+        os._exit(1)
+
+    prev_handlers: dict = {}
+    for _sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            prev_handlers[_sig] = signal.signal(_sig, _on_signal)
+        except (ValueError, OSError):
+            # Not in the main thread (or platform lacks the signal) — skip it.
+            pass
+
+    def _restore_handlers() -> None:
+        for _sig, _prev in prev_handlers.items():
+            try:
+                signal.signal(_sig, _prev)
+            except (ValueError, OSError):
+                pass
+
+    def _finalize_clean() -> None:
+        """Restore the SUT, verify under -O, drop the sidecar, restore handlers.
+
+        Returns normally on success. On a genuine restore failure it re-writes
+        original_bytes, prints an error, and exits non-zero (leaving the sidecar
+        as the recovery artifact).
+        """
+        sut.write_bytes(original_bytes)
+        # -O-safe restore verification: an `assert` would be stripped under
+        # `python -O`, so check explicitly and exit non-zero on mismatch.
+        if sut.read_bytes() != original_bytes:
+            sut.write_bytes(original_bytes)
+            _restore_handlers()
+            print(
+                "test-integrity: guard-mutation failed to restore SUT "
+                f"({sut}); sidecar kept for recovery: {sidecar}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        try:
+            sidecar.unlink()
+        except FileNotFoundError:
+            pass
+        _restore_handlers()
+
+    mutations = generate_mutations(source)
+
+    if not mutations:
+        _finalize_clean()
+        print(f"guard-mutation: no applicable mutations for {sut} (inconclusive)")
+        return 2
+
+    breaks = max(0, int(args.breaks))
+    if breaks:
+        mutations = mutations[:breaks]
+
+    survivors: list[str] = []
+    applied = 0
+    try:
+        for desc, mutated_source in mutations:
+            applied += 1
+            sut.write_bytes(mutated_source.encode("utf-8"))
+            try:
+                proc = subprocess.run(
+                    args.test_cmd,
+                    shell=True,
+                    cwd=str(cwd),
+                    capture_output=True,
+                )
+            finally:
+                # Restore immediately, before evaluating, so the SUT is never
+                # left mutated between iterations or on exception.
+                sut.write_bytes(original_bytes)
+            caught = proc.returncode != 0
+            if not caught:
+                survivors.append(desc)
+    finally:
+        # Belt-and-suspenders: guarantee restoration on any exit path.
+        sut.write_bytes(original_bytes)
+
+    # Final restore verification + sidecar removal + handler restore. May exit
+    # non-zero if the restore genuinely failed (sidecar then survives as the
+    # recovery artifact).
+    _finalize_clean()
+
+    if survivors:
+        for desc in survivors:
+            print(f"SURVIVED: {desc}")
+        print(
+            f"guard-mutation: {len(survivors)}/{applied} mutation(s) survived "
+            f"— suite is weak/tautological"
+        )
+        return 1
+
+    print(f"guard-mutation OK: all {applied} applied mutation(s) caught")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="test-integrity", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -378,6 +730,16 @@ def build_parser() -> argparse.ArgumentParser:
     ca = sub.add_parser("count-asserts", help="Count assertions per file")
     ca.add_argument("files", nargs="+")
     ca.set_defaults(func=cmd_count_asserts)
+
+    gm = sub.add_parser(
+        "guard-mutation",
+        help="Mutate the SUT and verify the suite catches each break (mutation testing)",
+    )
+    gm.add_argument("--sut", required=True, help="source file under test")
+    gm.add_argument("--test-cmd", required=True, help="shell command; exit 0 == GREEN")
+    gm.add_argument("--breaks", type=int, default=5, help="max mutations to apply")
+    gm.add_argument("--cwd", default=None, help="working dir for test-cmd (default: SUT parent)")
+    gm.set_defaults(func=cmd_guard_mutation)
 
     return p
 

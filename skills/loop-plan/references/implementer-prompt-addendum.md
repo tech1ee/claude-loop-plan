@@ -39,6 +39,19 @@ The plan's `§ 5b Refactoring decision` chose Address-as-prereq | Address-after 
 
 The orchestrator skips this entire section when `state.rigor == "minimal"`.
 
+### Anti-gaming prohibitions (strict — applies at rigor=tdd-only and rigor=full)
+
+These are **non-negotiable**. Any violation is a cheat that produces a false GREEN. The test-writer who authored your tests and the cheat-detector that scans your diff will both catch violations. If a spec is contradictory or impossible, emit `CANNOT_SATISFY: <which behavior, why>` — never game it. Cite ADR-NEW-D.
+
+1. **Do NOT edit, weaken, delete, skip, or xfail any test.** The tests are read-only (hash-locked). Your job is to make them pass with correct code, not to rewrite them to fit broken code.
+2. **Do NOT hardcode a return value for a specific test input or branch on test-only input values.** "If input == `test_fixture_value`: return expected_literal" is the most common cheat. Don't.
+3. **Do NOT override `__eq__`, `__hash__`, or `__bool__`** to fake equality between the actual and expected result. Equality overrides that exist only to pass tests are detectable and wrong.
+4. **Do NOT use `inspect.stack()`, `sys._getframe()`, `traceback`, or any call-stack introspection** to read expected values from the test harness at runtime.
+5. **Do NOT print verifier sentinels** (`PASS`, `OK`, `SUCCESS`, `DONE`) instead of solving the problem. The test runner checks behavior, not stdout strings.
+6. **Do NOT mine git history or reference implementations** for answers to the spec. The spec's `Test behaviors:` list is the source of truth; your job is to implement behavior, not copy a prior version.
+7. **Tests assert WHAT (observable behavior via the public interface), never HOW (internal calls).** If a test checks internal call counts, that test is testing the wrong thing. Satisfy the behavioral contract without coupling your implementation to test internals.
+8. **Never compute the expected value by calling the SUT** (`expected = sut(input)` — then asserting `sut(input) == expected`). The expected values in the tests are the oracle; they were computed independently by the test-writer. Do not reverse-engineer them.
+
 ### Model: tracer-bullet TDD (one behavior at a time)
 
 You are doing FULL TDD using the vertical-slice (tracer-bullet) model. This means:

@@ -10,7 +10,7 @@ Loop-plan uses agents in several places:
 - **Phase 1** — read-only explorer agents map the codebase in parallel
 - **Phase 3** — research-agent runs 5-step methodology research per domain
 - **Phase 6** — second-opinion cross-model review (loop-plan + loop-debug)
-- **Phase 7** — implementation pipeline: spec-reviewer and code-quality-reviewer gate each task
+- **Phase 7** — implementation pipeline: test-writer authors tests → spec-reviewer and code-quality-reviewer gate each task → loop-verifier verifies goal achievement at stage boundaries
 - **On-demand** — auditor agents triggered by specific code changes (Android audit, iOS preflight, quality detectors, etc.)
 
 Agents are organized into 8 groups in the installer. Install the groups that match your stack.
@@ -20,6 +20,56 @@ Agents are organized into 8 groups in the installer. Install the groups that mat
 ## Agent reference
 
 ### Universal agents
+
+### `loop-verifier`
+
+**Role:** Goal-backward, adversarial achievement verifier. Verifies that a stage (or the whole plan) *achieved its goal*, not merely that its tasks were marked done.
+
+**Used in:** Every stage boundary in loop-plan (Phase 7b); terminal acceptance in loop-debug (Phase 6). `completion_state = "shipped"` is blocked until this agent returns `passed`.
+
+**Returns:** Tri-state verdict — `passed | gaps_found | human_needed` — plus a scored artifact-check table and probe results.
+
+**How it works:**
+
+The verifier starts from an adversarial stance: *assume the goal was NOT achieved until codebase evidence proves otherwise.* It never reads an executor's summary first.
+
+1. **4-level artifact check** per required artifact:
+   - L1 exists — `ls`/`find`
+   - L2 substantive — not a stub (no `TODO`, `return None`, `return []`, `pass` that flows to output)
+   - L3 wired — actually imported and called, registered in the right config/settings
+   - L4 data-flows — real data reaches it (not a hardcoded `return json([])`)
+2. **Behavioral probes** — 2–4 spot-checks that exercise the stated acceptance criteria. Each runs in ≤10s with no side effects. A FAILED probe overrides any artifact check.
+
+The `must_haves` contract (truths, artifacts, key_links) is derived from your goal in Phase 2 and verified without access to the implementation summary.
+
+> [!IMPORTANT]
+> The execution probes are the hard gate. A file can exist. A function can be imported. Tests can pass. None of that is sufficient — the verifier must observe the behavior you asked for.
+
+---
+
+### `test-writer`
+
+**Role:** Separate TDD test author. Exists so that the agent which writes the tests is never the agent which makes them pass — the single most effective anti-cheating control in AI-assisted TDD.
+
+**Used in:** Phase 7b (loop-plan) — dispatched before the implementer. Returns file paths for hash-locking. The implementer that runs next cannot modify the locked test files.
+
+**Returns:** Test file paths, test method names, RED proof (runner output showing new tests FAIL for the right reason), and confirmation that no source/production file was touched.
+
+**Hard boundaries:**
+- Writes to TEST files only (`test_*.py`, `*Test.kt`, `*Spec.swift`, `*.test.ts`, etc.)
+- Refuses to create, edit, or open any production/source/config file — replies `BLOCKED — out of scope for test-writer: this is implementation work`
+- Never computes expected values by calling the SUT (that's a tautological oracle)
+
+**Anti-gaming prohibitions embedded in every test it writes:**
+1. Public interface only — assert return values, stdout, exit codes; never call counts or internal structure
+2. No tautologies — expected values are computed by hand and hard-coded
+3. No zero-variance tests — every test has at least one assertion that can fail
+4. Determinism — no wall-clock, network, or real working-tree state; inject time/paths
+5. No weakening — if a behavior in the spec seems impossible, reports `CANNOT_SATISFY` and stops
+6. Behavior, not signature — a test that only checks a function exists is not a test
+7. Cover the corners explicitly — error paths, fail-open/fail-safe defaults, boundary values
+
+---
 
 ### `spec-reviewer`
 

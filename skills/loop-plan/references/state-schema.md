@@ -120,6 +120,41 @@ Sidecar file that lets a loop-plan session resume across Claude Code restarts, c
 
   "rigor": "tdd-only",
 
+  // ── Goal-fidelity fields (ADR-NEW-C, added 2026-05-23) ──────────────────
+  "goal": "Make the loop skills reliably achieve and validate their stated goal.",
+
+  "success_criteria": [
+    "SC1. <observable criterion — measurable, no placeholder>",
+    "SC2. ..."
+  ],
+
+  "must_haves": {
+    "truths": [
+      "<observable statement that must be true in the codebase — behavioral, checkable>"
+    ],
+    "artifacts": [
+      { "path": "<file path>", "provides": "<what it must contain/do>" }
+    ],
+    "key_links": [
+      { "from": "<A>", "to": "<B>", "via": "<mechanism — e.g. import, settings.json entry, CLI call>" }
+    ]
+  },
+
+  "verification": {
+    "status": null,
+    "score": null,
+    "gaps": []
+  },
+
+  "stages": [
+    {
+      "id": "stage-1",
+      "exit_criteria": ["<measurable criterion — what must be true before stage-2 can begin>"],
+      "verification": null
+    }
+  ],
+  // ────────────────────────────────────────────────────────────────────────
+
   "tests_state": [
     {
       "task_id": "T7",
@@ -178,6 +213,11 @@ Sidecar file that lets a loop-plan session resume across Claude Code restarts, c
 - `adrs_created` — array of `{ adr_id, slug, status, source_clarification_iteration, skipped, reason? }` for ADRs auto-created in Phase 2 of the current loop. `skipped: true` indicates the heuristic matched but the create was deliberately not performed (e.g. no project root); include `reason` then.
 - `pattern_candidates` — array of `{ pattern_slug, source_adrs, project_count }` surfaced by Phase 4 / Phase 7b via `new-adr.py grep-patterns`. Manual review only — never auto-promoted (per ADR-0003).
 - `tests_state` — append-only per Phase 7c task. Tracks RED→GREEN→verify→mutation progress for audit + resume. Cite ADR-0010 (per-task test specs) + ADR-0009 (mutation gate). Fields per task: `task_id`, `test_files[]`, `red_confirmed_at` (ISO ts at step 2), `snapshot_at` (step 3), `green_confirmed_at` (step 5), `tamper_detected` (boolean from step 6 verify), `mutation_score` (0.0–1.0 OR string `"skipped — budget exceeded (15 min)"` / `"skipped — no tool for stack"`), `mutation_threshold_high`, `mutation_threshold_low`, `mutation_threshold_break` (per ADR-0009 tiered model), `mutation_tier_result` (`"high"` | `"low"` | `"break"` | `"skipped"`). Empty array when `state.rigor == "minimal"` (no TDD pipeline runs) or for plans with all-opt-out tasks.
+- `goal` — the task statement distilled to a single outcome sentence. Set at Phase 2 when `must_haves` is captured (ADR-NEW-C). Nullable for backward compat; treated as "not captured" by loop-verifier when null.
+- `success_criteria[]` — observable, measurable criteria derived from the user's stated goal + Phase 2 clarifications. Each entry is a complete sentence with a checkable predicate (no "should be better", no "good performance"). HARD GATE: loop-plan **cannot leave Phase 2** if any entry is a placeholder or non-observable. Set alongside `must_haves` (ADR-NEW-C).
+- `must_haves` — three-part goal contract consumed by `loop-verifier` at each stage gate (ADR-NEW-C). **truths[]**: observable behavioral claims that must be true in the codebase. **artifacts[]**: concrete files that must exist with a specific `provides` predicate. **key_links[]**: wiring connections that must be verified (`from → to via mechanism`). The `loop-verifier` agent runs a 4-level artifact check + behavioral probes against this contract — never against the executor's narration.
+- `verification` — tri-state result from the latest `loop-verifier` run. `status`: one of `passed | gaps_found | human_needed | null`. `score`: `<verified>/<total>` truths. `gaps[]`: structured YAML produced by `loop-verifier` when `status == gaps_found`. `state.completion_state` may only be set to `"shipped"` when `verification.status == "passed"` (or `"human_needed"` with explicit user sign-off) — ADR-NEW-C.
+- `stages[]` — array of stage-boundary objects for multi-stage plans. Each stage has `id` (string), `exit_criteria[]` (measurable), and `verification` (the `loop-verifier` verdict object for that stage, null until verified). Stage N+1 execution MUST NOT begin until `stages[N].verification.status == "passed"` or signed-off `human_needed` — ADR-NEW-C.
 - `rigor` — one of `"minimal" | "tdd-only" | "full"`. Set at Phase 2 Q0 by the user (cite ADR-0015). **MUST be written to disk immediately after the Q0 answer comes back, BEFORE any Phase 2 Q1+ AskUserQuestion fires** (cite ADR-0021 for the persistence contract — observed null-rigor rate was 92.5% before this fix). If the write fails, retry once; if still failing, surface to user — do not advance with `rigor: null`. **Phase 2 entry-check:** if `state.rigor` is null AND `iteration > 1`, the state was lost between iterations — re-fire Q0 to recover. Consulted by Phase 1 (refactoring-candidates report — eager-computed, discarded if not full), Phase 4 (Architecture / Test plan / § 5b emission branching), Phase 6a (drift rules 10–13 applicability), Phase 7b (TDD pipeline + mutation-floor check). Defaults to `"tdd-only"` if user provides no answer at Q0 (per ADR-0015). Never mutated after Phase 2; persists across loop iterations 2+.
 - `date_filter` — the active date filter config. Baseline comes from `references/date-filter.md`. Can be overridden by the user if a topic legitimately requires older sources.
 - `last_active_at` — ISO 8601 timestamp of the most recent state.json write. Touched on every state write across all phases. Used by `/loop-plan-audit` (cite ADR-0021) to flag stale plans (>14 days idle, `current_phase ≤ "5"`). Optional for backward compat — pre-2026-05-09 state files lack this field; audit treats them as "unknown" until they're touched again.

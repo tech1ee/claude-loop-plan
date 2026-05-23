@@ -18,13 +18,17 @@ Your SINGLE job is to find INTERNAL inconsistency. You are NOT evaluating:
 - code style or naming
 
 **Rigor branching (read `state.rigor` from the sidecar `state.json` BEFORE checking):**
-- `minimal`: apply rules 1–9 only.
-- `tdd-only`: apply rules 1–12.
-- `full`: apply rules 1–13.
+- `minimal`: apply rules 0–9 only.
+- `tdd-only`: apply rules 0–12.
+- `full`: apply rules 0–13.
 
 When a rule does not apply for the current loop's tier, write `<category>: SKIPPED (rigor=<tier>)` in the report instead of CLEAN/DRIFT. The verdict is DRIFT if ANY APPLICABLE category returned DRIFT. Cite ADR-0015.
 
-You ARE checking up to 13 things (applicability per tier above):
+You ARE checking up to 15 things — rules 0 and 0b apply at ALL tiers; rules 1–9 apply at all tiers; rules 10–12 at tdd-only+; rule 13 at full only:
+
+0. **Goal coverage** — Read `state.must_haves.truths[]` from the sidecar `state.json`. For each truth, verify that ≥1 task in `## Plan` addresses it (by name, description, or explicit citation). A must-have truth with no task covering it is an **uncovered must-have** — list it verbatim. If `state.must_haves` is null or `state.goal` is null, that itself is DRIFT (Phase 2 gate was bypassed). **(applies: all tiers — ADR-NEW-C)**
+
+0b. **Cross-vendor validation per task** — Every task in `## Plan` that produces executable code (i.e. is NOT on the TDD opt-out list with `TDD: skipped`) MUST carry a `Cross-vendor validation:` line in its definition-of-done. This line names the Codex diff review (cost-gated via `should-run-codex.py`, security-class override). Any task missing this line is without an external audit gate — list each task that lacks it. **(applies: all tiers — ADR-NEW-C, ADR-0023)**
 
 1. **Requirement coverage** — Every line in the "## Clarifications" section captures a user decision. Does every such decision map to at least one task in "## Plan"? List each clarification that has NO corresponding plan content as an orphan.
 
@@ -76,6 +80,10 @@ Report in this EXACT format, nothing else:
 
 ## Drift check report
 
+- Goal coverage: CLEAN | DRIFT (<N> uncovered must-haves)
+  <list each uncovered must-have truth verbatim; or "state.must_haves null — Phase 2 gate bypassed">
+- Cross-vendor validation per task: CLEAN | DRIFT (<N> tasks missing Cross-vendor validation line)
+  <list each task title missing the line>
 - Requirement coverage: CLEAN | DRIFT (<N> orphans)
   <list each orphan with the clarification text verbatim>
 - Research coverage: CLEAN | DRIFT (<N> orphans)
@@ -105,7 +113,7 @@ Report in this EXACT format, nothing else:
 
 Verdict: CLEAN | DRIFT
 
-The verdict is DRIFT if ANY APPLICABLE category returned DRIFT (applicable set determined by `state.rigor`: 9 at minimal, 12 at tdd-only, 13 at full). SKIPPED categories are not DRIFT.
+The verdict is DRIFT if ANY APPLICABLE category returned DRIFT (applicable set determined by `state.rigor`: 11 at minimal [rules 0, 0b, 1–9], 14 at tdd-only [rules 0, 0b, 1–12], 15 at full [rules 0, 0b, 1–13]). SKIPPED categories are not DRIFT.
 ```
 
 ## Interpreting results

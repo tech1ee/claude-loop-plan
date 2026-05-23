@@ -368,6 +368,28 @@ After the answer, the orchestrator passes `state.rigor` to all later phases (Pha
 - Write answers verbatim into `## Clarifications` section of the plan file, timestamped.
 - Update `state.clarifications[].iteration`, `state.clarifications[].questions`, `state.clarifications[].answers`.
 
+**Capture `must_haves` contract — HARD GATE (ADR-NEW-C):**
+
+After the Q1+ answers are written, synthesize the user's goal and criteria into the plan's `## Goal & success criteria` section AND write to `state.must_haves`:
+
+```
+must_haves:
+  truths:   [ "<observable statement that must be true — no placeholders, no 'should be better'>" ]
+  artifacts: [ { path: "<file>", provides: "<what it must contain/do>" } ]
+  key_links: [ { from: "<A>", to: "<B>", via: "<mechanism>" } ]
+```
+
+Also set `state.goal` (one sentence outcome) and `state.success_criteria[]` (one entry per measurable observable criterion).
+
+**HARD GATE: do NOT advance to Phase 3 if any of the following is true:**
+- `state.must_haves.truths` is empty.
+- Any truth is a placeholder (contains "TBD", "better", "improve", or is non-observable).
+- The `truths` list does not cover every stated goal from the task statement.
+
+If the gate fails, re-enter Phase 2 Q1+ with a focused question: "These success criteria can't be verified. What specific, observable outcome would prove X is done?" Cite ADR-NEW-C.
+
+**For multi-stage plans:** assign each truth to a stage by writing `state.stages[]` — each stage gets an `id`, `exit_criteria[]` (which truths must pass before this stage's work begins), and a null `verification`. Stage boundaries appear in the Phase 4 DAG (see § Plan emission).
+
 **Auto-write architecture-tagged clarifications as ADRs** (cite ADR-0004):
 For each answer whose AskUserQuestion `header` is in the architecture whitelist (see [`references/design-and-quality.md`](references/design-and-quality.md) § Decision-detection heuristic — `Library`, `Framework`, `Storage`, `DI`, `Pattern`, `Architecture`, `Structure`, `Layering`, `State`, `Persistence`, `Navigation`, `Auth`, `API`, `Format`), call:
 ```bash
@@ -482,6 +504,10 @@ Cite ADR-0015 (rigor selection) and ADR-0012, ADR-0014 for the § 5b semantics w
 - **Every task in `## Plan` MUST cite ≥1 ADR-ID** from `state.project_decisions[]` (loaded at Phase 0) or `state.adrs_created[]` (auto-created at Phase 2). Tasks without ADR citation are unjustified and fail Phase 6 drift rule 7. Add a "Cited ADRs" column to the task table.
 - Preserve previous iterations' content. The plan file grows; it does not reset.
 - Update `state.iteration` and `state.last_update_at`.
+
+**Rules (apply at all rigor tiers — goal-fidelity additions per ADR-NEW-C):**
+- **Every task in `## Plan` that produces executable code MUST carry a `Cross-vendor validation:` line** in its definition-of-done. Format: `Cross-vendor validation: Codex diff review via should-run-codex.py (cost-gated); security-class override applies.` Tasks on the TDD opt-out list (meta-planner-edit, docs-only, formatter-only) are exempt. Drift rule 0b verifies this.
+- **For multi-stage plans, emit explicit stage boundaries** in the `## Orchestration design` DAG. Each stage boundary shows: which truths from `state.must_haves.truths[]` are verified at that boundary, and an explicit **STAGE GATE** node: `dispatch loop-verifier → wait for passed | gaps_found | human_needed → gaps_found: HALT, fix, re-verify; human_needed: surface to user; passed: continue`.
 
 **Rules (apply only when `state.rigor != "minimal"`):**
 - **Every task in `## Plan` that produces executable code MUST list its test specification BEFORE its implementation steps.** Add a `Test behaviors:` field to each such task block (numbered list of observable behaviors, one per line, format: "Subject + action + observable outcome"). Example: `1. User can checkout with valid cart. 2. Checkout fails with expired card. 3. Cart total updates when item removed.` Each behavior is a specification sentence (WHAT the system does through its public interface, not HOW it does it). Tasks legitimately exempt from TDD use the opt-out form `TDD: skipped — <reason from whitelist>` instead — the whitelist lives in [`references/tdd-workflow.md § TDD opt-out matrix`](references/tdd-workflow.md). Drift rules 10, 11, 12 (Phase 6a) verify these fields. Cite ADR-0010.
@@ -617,36 +643,11 @@ Phase 6 runs TWO passes in sequence:
 
 ### 6a — Drift check (Claude sub-agent, internal consistency)
 
-**Dispatch a sub-agent with this prompt** (template in `references/drift-check.md`):
+**Dispatch a sub-agent** using the full prompt template from `references/drift-check.md` (verbatim — includes rigor branching, all 15 rules including the new rules 0 / 0b for goal coverage + cross-vendor per task, and the exact report format). **Do NOT inline a shortened version of the drift-check here** — the canonical rules live in `references/drift-check.md`.
 
-> You are a drift-detection reviewer. Read the plan file at `~/.claude/plans/<slug>.md`. Your job is to find INTERNAL inconsistency — not to judge quality, not to rewrite, not to propose new content.
->
-> Check each of these explicitly and report findings:
-> 1. **Requirement coverage** — does every item in "Clarifications" map to at least one task in "Plan"? List any clarifications without a corresponding plan section.
-> 2. **Research coverage** — does every major research finding in "Research findings" map to either a plan decision that cites it, or an explicit "considered and rejected because X"? List orphans.
-> 3. **Scope drift** — do any tasks address things that were NOT in the clarifications? List scope creep.
-> 4. **File-path consistency** — do tasks reference file paths that exist or will exist after earlier tasks? Flag dangling references.
-> 5. **Code-block plausibility** — do any code blocks contain placeholders (`TODO`, `XXX`, `FIXME`, `// implement`, `<your-...>`)? List them with file:line.
-> 6. **Decision justification** — is every design decision traced to either a clarification or a research finding? List unsupported decisions.
-> 7. **ADR justification** — does every task in `## Plan` cite ≥1 ADR-ID? List tasks with no ADR citation as unjustified.
-> 8. **ADR coverage** — does every newly-created ADR (from `state.adrs_created[]`) appear in `## Architecture & clean-code design § Architecture decisions`? List orphans.
->
-> Report in this exact format:
->
-> ```
-> ## Drift check report
->
-> - Requirement coverage: CLEAN | N orphans (list them)
-> - Research coverage:    CLEAN | N orphans (list them)
-> - Scope drift:          CLEAN | N violations (list them)
-> - File-path:            CLEAN | N dangling (list them)
-> - Placeholder code:     CLEAN | N occurrences (file:line)
-> - Unjustified decisions: CLEAN | N violations (list them)
-> - ADR justification:    CLEAN | N tasks without ADR (list them)
-> - ADR coverage:         CLEAN | N orphan ADRs (list them)
->
-> Verdict: CLEAN | DRIFT
-> ```
+Key rules added in ADR-NEW-C (rules 0 and 0b apply at ALL rigor tiers):
+- **Rule 0 (goal coverage):** every `state.must_haves.truths[]` entry must map to ≥1 task in the plan.
+- **Rule 0b (cross-vendor per task):** every non-opt-out executable task must carry a `Cross-vendor validation:` line.
 
 **Handling:**
 - **Verdict CLEAN** → write drift report to `## Drift check` section of plan file, set `state.drift_check = "clean"`, advance to 6b.
@@ -755,23 +756,75 @@ When the user approves the plan, set `state.current_phase = "7b"` and proceed di
    - Honor the worktree strategy (`isolation: worktree` for parallel implementers; sequential on main otherwise).
    - **Compact prompt style (caveman-informed):** wrap the task text in compact fragment syntax when constructing the context_hint. `Impl: <task title>. Behaviors: 1.<b1> 2.<b2>. Files: <target files>. Addendum: see implementer-prompt-addendum.md. Turn cap → partial+concerns OK.` Keep the `Test behaviors:` list verbatim — don't paraphrase. Do NOT apply compact style to the addendum content itself.
 
+   **Pre-dispatch anti-cheating (when rigor∈{tdd-only,full} — per ADR-NEW-D):**
+   ```
+   A. Dispatch test-writer subagent SEPARATELY (before implementer):
+      - Pass task id, SUT file paths, Test behaviors: list, project framework by value.
+      - test-writer returns: file paths + test method names + RED proof.
+      - Verify: "wrote test files only; touched no SUT/source file" + git status check.
+   B. Hash-lock the tests:
+      ~/.claude/bin/test-integrity.py snapshot --task <id> --files <returned paths>
+      (locks tests read-only via PreToolUse hook for the entire implementer dispatch)
+   C. Guard-mutation check (before dispatching implementer):
+      ~/.claude/bin/test-integrity.py guard-mutation --task <id> --files <test-files> --stub <sut-path>
+      Any spec test staying GREEN on a trivial break → tautological → HARD-BLOCK (re-dispatch test-writer).
+   ```
+
    **Post-dispatch (orchestrator main session, AFTER implementer completes):**
    ```
    1. test-runner mode: unit → must report PASS (GREEN). If FAIL: implementer
       did not satisfy all behaviors — re-dispatch with failure context (max 2 retries).
+   1a. Anti-cheat: impl-diff lint (D1):
+       ~/.claude/bin/detect-test-gaming.py --diff <impl-diff> --test-files <test-files>
+       Any flag → HARD-BLOCK + re-dispatch implementer (max 2 retries). Cite ADR-NEW-D.
+   1b. Anti-cheat: tautology scanner (D2):
+       ~/.claude/bin/detect-tautological-tests.py --test-files <test-files>
+       Any flag → HARD-BLOCK. Cite ADR-NEW-D.
+   1c. test-integrity verify:
+       ~/.claude/bin/test-integrity.py verify --task <id>
+       TAMPER DETECTED → abort task, surface to user.
    2. spec-reviewer validates behavioral test quality:
       (a) tests exist for each listed behavior in Test behaviors:
       (b) tests use public interface only — no internal mocking of own modules
       (c) test names describe WHAT not HOW ("should checkout with valid cart"
           not "should call PaymentService.charge")
+      (d) NEW: spec-reviewer is ALSO handed the stage's must_haves truths and must
+          confirm the implementation satisfies the GOAL truths relevant to this task
+          — not only the task's own Test behaviors: (ends the circular task-local check).
+          Cite ADR-NEW-C. Format: "spec-reviewer, additionally confirm: <relevant truth(s)>."
    3. code-quality-reviewer validates: no tautological tests, no mock > assert ratio.
-   4. test-runner mode: mutation → terminal quality gate. Per-stack tool from
+   4. Cross-vendor diff review (per-task, cost-gated — per ADR-NEW-C + ADR-0023):
+      ~/.claude/bin/should-run-codex.py --base <pre-task sha> --head HEAD
+      If RUN: dispatch second-opinion stage:diff (task diff only). Advisory; findings
+      re-routed like reviewer findings (HIGH → re-dispatch implementer with finding context).
+      If SKIP (cost gate): note in execution log. Security-class paths always RUN.
+      Cite ADR-0023, ADR-0024. This is the genuine cross-vendor independence layer — the
+      same-vendor reviewers share blind spots; Codex catches what Opus reviewers pass.
+   5. test-runner mode: mutation → terminal quality gate. Per-stack tool from
       Test plan § Mutation tool + threshold. Tiered thresholds per T9 below.
-      Equivalent-mutant noise: low-tier surfaces to spec-reviewer (advisory). 15-min budget.
-   5. ADR confirm + accept (step 5a below) only after all gates green.
+      NON-SKIPPABLE when rigor∈{tdd-only,full} (only BUDGET_EXCEEDED and no-tool-for-stack
+      are valid exemptions — cite ADR-NEW-D). Equivalent-mutant noise: low-tier surfaces to
+      spec-reviewer (advisory). 15-min budget.
+   6. ADR confirm + accept (step 5a below) only after all gates green.
    ```
 
-   For tasks with `TDD: skipped — <reason>` from the whitelist: only the implementer dispatch runs (no post-dispatch TDD gates). Per [`references/tdd-workflow.md § TDD opt-out matrix`](references/tdd-workflow.md#tdd-opt-out-matrix).
+   For tasks with `TDD: skipped — <reason>` from the whitelist: only the implementer dispatch + cross-vendor review run (no TDD gates). Per [`references/tdd-workflow.md § TDD opt-out matrix`](references/tdd-workflow.md#tdd-opt-out-matrix).
+
+   **Stage boundary gates (multi-stage plans — per ADR-NEW-C):**
+
+   After all tasks in a stage complete, BEFORE proceeding to the next stage:
+   ```
+   A. Dispatch loop-verifier subagent with:
+      - must_haves block (truths/artifacts/key_links for THIS stage) by value
+      - repo path
+   B. Wait for verdict (passed | gaps_found | human_needed):
+      - passed → update state.stages[N].verification.status = "passed"; proceed.
+      - gaps_found → HALT DAG. Write gaps to plan's ## Stage <N> Verification section.
+        Generate gap-closure tasks. Execute gap tasks. Re-dispatch loop-verifier (re-check mode).
+      - human_needed → surface to user for sign-off before Stage N+1 starts.
+   C. Also dispatch: second-opinion stage:diff on the STAGE diff (all tasks in stage N).
+      Write findings to ## Stage <N> Second Opinion. Advisory.
+   ```
 
    **Mutation gate tiered thresholds (T9, cite ADR-0009):**
 
@@ -808,11 +861,18 @@ When the user approves the plan, set `state.current_phase = "7b"` and proceed di
    - Hard failure (cannot proceed without user input) → save partial state to `state.json`, write a `## Execution log` section to the plan file with what completed and what blocked, surface a single message to the user with the blocker
    - Heartbeat — every 5 completed tasks, write a `## Execution log` checkpoint to the plan file
 
-7. **Completion**:
-   - When the last task in the DAG passes its gate, append `## Execution complete` to the plan file with: tasks completed, tests run, agents used, total duration
-   - Trigger `superpowers:finishing-a-development-branch` for integration cleanup (commit / PR / merge per the user's preference)
-   - Set `state.current_phase = "done"`, `state.completed_at = ISO timestamp`, `state.completion_state = "shipped"`, and refresh `state.last_active_at`
-   - Surface a 3-line completion summary to the user
+7. **Completion — goal-backward gate (ADR-NEW-C):**
+   - When the last task in the DAG passes its gate, run a **final whole-goal `loop-verifier` pass**:
+     - Dispatch loop-verifier with the FULL `state.must_haves` contract + repo path.
+     - Verdict `passed` → proceed to ship.
+     - Verdict `gaps_found` → generate + execute gap-closure tasks; re-run verifier.
+     - Verdict `human_needed` → surface to user for sign-off; do not set `shipped` unilaterally.
+   - Only after `verification.status == "passed"` (or signed-off `human_needed`):
+     - Append `## Execution complete` to the plan file (tasks completed, tests run, agents used, total duration, loop-verifier score).
+     - Trigger `superpowers:finishing-a-development-branch` for integration cleanup.
+     - Set `state.current_phase = "done"`, `state.completed_at = ISO timestamp`, `state.completion_state = "shipped"`, `state.verification.status = "passed"`, and refresh `state.last_active_at`.
+     - Surface a 3-line completion summary to the user.
+   - **NEVER set `completion_state = "shipped"` without a `passed` (or signed-off `human_needed`) loop-verifier verdict.** Task completion ≠ goal achievement.
 
 ### Why two sub-phases instead of one ExitPlanMode
 

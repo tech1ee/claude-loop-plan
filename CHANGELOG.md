@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.3.0 — 2026-05-23
+
+**New agents (2):**
+- `loop-verifier` — goal-backward adversarial achievement verifier. Runs a 4-level artifact check (exists → substantive → wired → data-flows) + behavioral probes against a `must_haves` contract. Returns a tri-state verdict (`passed | gaps_found | human_needed`). The execution probes are the hard gate — task-completion narration is never accepted as evidence. Used at every stage boundary in `loop-plan` and at terminal acceptance in `loop-debug`.
+- `test-writer` — separate TDD test author (separation-of-duties anti-cheating control). Authors failing tests from a task's `Test behaviors:` spec, proves them RED, and returns file paths for hash-locking before any implementer runs. Refuses to touch production code. Embodies 7 anti-gaming prohibitions (no tautological oracles, no signature-only assertions, no implementation coupling).
+
+**Skill updates — `loop-plan`:**
+- Phase 2 HARD GATE: cannot advance if `must_haves.truths[]` is empty, contains "TBD", "better", "improve", or any non-observable predicate
+- Phase 7b pre-dispatch anti-cheating: `test-writer` dispatch → hash-lock → `guard-mutation` oracle; post-dispatch: `detect-test-gaming` (D1) + `detect-tautological-tests` (D2) HARD-BLOCKs; per-task Codex cross-vendor review; non-skippable mutation floor
+- Stage boundary gates: `loop-verifier` dispatched at each stage; `gaps_found` halts the DAG and generates fix tasks
+- Completion gate: `completion_state = "shipped"` ONLY after `loop-verifier` verdict `passed` (or signed-off `human_needed`). Never set on task-count completion alone.
+
+**Skill updates — `loop-debug`:**
+- Phase 2 HARD GATE: acceptance criteria lifted into `must_haves` contract before advancing to Phase 3
+- Per-task cross-vendor validation on T0a, T-fix, and T0b (Codex `stage:diff`, cost-gated)
+- `spec-reviewer` is also handed `must_haves.truths` — verifies the fix satisfies acceptance criteria, not only that T0a is GREEN
+- Terminal acceptance check: `loop-verifier` dispatched after T0a GREEN + mutation post≥pre; `gaps_found` → HALT + gap-closure tasks
+
+**Reference files updated:**
+- `references/state-schema.md` — `goal`, `must_haves`, `verification`, `stages[]` fields added with HARD GATE rule
+- `references/drift-check.md` — Rule 0 (goal coverage: every `must_haves.truth` → ≥1 task) and Rule 0b (cross-vendor per task: every non-opt-out task needs `Cross-vendor validation:` line) now apply at **all** rigor tiers
+- `references/tdd-workflow.md` — anti-cheating guardrails section (P1 separation of duties, V2 guard-mutation, D1/D2 detectors, V1 non-skippable mutation floor) + PBT recipe (function-shape → invariant table, Hypothesis template)
+- `references/implementer-prompt-addendum.md` — P5 anti-gaming prohibition list (7 rules: no test edits, no hardcoded returns, no `__eq__` overrides, no stack inspection, no sentinel printing, no mining git history, no SUT-as-oracle)
+
+**New bin scripts (2):**
+- `bin/detect-test-gaming.py` — static detector for implementer-side gaming patterns (hardcoded returns for test inputs, branching on fixture values, stack inspection, sentinel printing). Exit 1 = HARD-BLOCK.
+- `bin/detect-tautological-tests.py` — static detector for tautological test oracles (expected = sut(input) patterns, zero-assertion tests, trivially-always-true assertions). Exit 1 = HARD-BLOCK.
+
+**Bin script updates (2):**
+- `bin/should-run-codex.py` — security-class regex broadened (covers `defender`, `injection`, `homoglyph`, `sanitiz`, `redact`, `entitlement`); `_parse_numstat` handles binary files and rename paths correctly
+- `bin/test-integrity.py` — `guard-mutation` subcommand added: source-level mutation testing oracle that proves tests are non-tautological by verifying at least one mutant (constant-fold, return-None, comparison-flip, string-literal) causes a test failure
+
 ## v0.2.2 — 2026-05-20
 
 **Agent updates (23 agents):**

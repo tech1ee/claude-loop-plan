@@ -21,7 +21,8 @@ LOC_THRESHOLD = 50
 FILE_COUNT_CEILING = 2
 
 ALWAYS_REVIEW = re.compile(
-    r"(auth|payment|secret|\.env|credentials?|token|oauth|jwt|apikey|security|crypto|password)",
+    r"(auth|payment|secret|\.env|credentials?|token|oauth|jwt|apikey|security|crypto|password"
+    r"|defender|injection|homoglyph|sanitiz|redact|entitlement|sandbox)",
     re.IGNORECASE,
 )
 
@@ -42,8 +43,43 @@ LOCKFILE = re.compile(
 CONFIG_SKIP = re.compile(r"(\.json$|\.yaml$|\.yml$|\.toml$|\.ini$)", re.IGNORECASE)
 
 
-def decide(loc_delta: int, file_count: int, files: list[str]) -> tuple[str, str]:
+def _normalize_numstat_path(path: str) -> str:
+    """Resolve a git rename path to the destination clean path.
+    Handles 'old => new' and 'dir/{old => new}.py' brace forms."""
+    if "=>" not in path:
+        return path
+    # brace form: prefix{old => new}suffix  -> prefix + new + suffix
+    m = re.search(r"\{(.*?) => (.*?)\}", path)
+    if m:
+        return path[:m.start()] + m.group(2) + path[m.end():]
+    # simple form: old => new
+    return path.split("=>")[-1].strip()
+
+
+def _parse_numstat(text: str) -> tuple[int, int, list[str]]:
+    """Parse `git diff --numstat` output. Retains binary-file paths (loc 0) and
+    normalizes rename paths to the clean destination so security/skip regexes see
+    a real filename. Returns (total_loc, file_count, files)."""
+    loc = 0
+    files: list[str] = []
+    for line in text.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 3:
+            continue
+        a, b, path = parts[0], parts[1], parts[2]
+        try:
+            loc += int(a or 0) + int(b or 0)
+        except ValueError:
+            pass  # binary file: columns are '-'; contribute 0 LOC but KEEP the path
+        files.append(_normalize_numstat_path(path))
+    return loc, len(files), files
+
+
+def decide(loc_delta: int, file_count: int, files: list[str], security_class: bool = False) -> tuple[str, str]:
     """Return (decision, reason) per the gate rules."""
+    if security_class:
+        return "RUN", "security-class override (forced)"
+
     if file_count == 0 and loc_delta == 0:
         return "SKIP", "empty diff"
 
@@ -88,21 +124,9 @@ def log_decision(decision: str, reason: str, loc: int, file_count: int) -> None:
 def _git_diff_stats(base: str, head: str, cwd: str) -> tuple[int, int, list[str]]:
     """Return (loc_delta, file_count, files) from git diff."""
     out = subprocess.check_output(
-        ["git", "diff", "--numstat", f"{base}..{head}"], cwd=cwd, text=True
+        ["git", "diff", "--numstat", "--no-renames", f"{base}..{head}"], cwd=cwd, text=True
     )
-    loc = 0
-    files: list[str] = []
-    for line in out.splitlines():
-        parts = line.split("\t")
-        if len(parts) < 3:
-            continue
-        try:
-            added, removed, path = int(parts[0] or 0), int(parts[1] or 0), parts[2]
-        except ValueError:
-            continue
-        loc += added + removed
-        files.append(path)
-    return loc, len(files), files
+    return _parse_numstat(out)
 
 
 def main() -> int:
@@ -112,7 +136,10 @@ def main() -> int:
     ap.add_argument("--cwd", default=os.getcwd())
     ap.add_argument("--loc", type=int, help="bypass git, pass LOC delta directly (testing)")
     ap.add_argument("--files", nargs="*", help="bypass git, pass file list directly (testing)")
+    ap.add_argument("--security-class", action="store_true")
     args = ap.parse_args()
+
+    security = bool(args.security_class) or os.environ.get("CODEX_FORCE_SECURITY") == "1"
 
     if args.loc is not None and args.files is not None:
         loc, files = args.loc, args.files
@@ -124,7 +151,7 @@ def main() -> int:
             print(f"git error: {e}", file=sys.stderr)
             return 2
 
-    decision, reason = decide(loc, file_count, files)
+    decision, reason = decide(loc, file_count, files, security_class=security)
     log_decision(decision, reason, loc, file_count)
     print(decision)
     print(reason)

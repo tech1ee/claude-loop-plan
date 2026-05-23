@@ -107,6 +107,9 @@ Claude asks only the questions that cannot be answered by reading the codebase. 
 
 The rigor choice gates the downstream review pipeline. Most tasks use **TDD-only** (the default). **Full** adds refactoring assessment and 11-dimension code review. **Minimal** skips the review pipeline entirely.
 
+> [!IMPORTANT]
+> **Phase 2 HARD GATE:** After answering the clarification questions, Claude synthesizes your goal into a `must_haves` contract — a list of observable behavioral truths, required artifacts, and key wiring links. It cannot advance to Phase 3 if any truth is a placeholder ("should be better", "improve performance") or non-observable. This contract is used by `loop-verifier` at every stage boundary to verify goal achievement independently.
+
 > [!TIP]
 > If you find Claude asking too many questions, answer the ones that matter and tell it to proceed. The question limit is 2 `AskUserQuestion` calls per loop iteration.
 
@@ -176,13 +179,27 @@ If drift is found, the loop returns to Phase 5 for another iteration.
 
 ### Phase 7 — Execute
 
-`ExitPlanMode` is called and subagent-driven execution begins. Each task runs through:
+`ExitPlanMode` is called and subagent-driven execution begins. Each task runs through a hardened anti-cheating pipeline:
 
-1. **Implementer** (Opus 4.7) — writes the code per the task spec
-2. **Test runner** — verifies tests pass
-3. **Spec-reviewer** — confirms implementation matches the plan spec
-4. **Code-quality-reviewer** — 11-dimension quality check
-5. Re-review if either reviewer returns NEEDS_REWORK
+**Pre-dispatch (TDD-only / Full rigor):**
+1. **`test-writer`** — separate agent authors failing tests from the task's `Test behaviors:` spec, proves them RED, returns file paths
+2. **Hash-lock** — `bin/test-integrity.py` snapshots the test files; the implementer cannot modify them
+3. **`guard-mutation` oracle** — verifies at least one trivial mutant of the SUT fails the new tests (proves tests are non-tautological)
+
+**Implementation + review:**
+4. **Implementer** (Opus 4.7) — writes code per the task spec; anti-gaming rules prohibit hardcoded returns, SUT-as-oracle, stack inspection
+5. **`detect-test-gaming`** (D1) + **`detect-tautological-tests`** (D2) — HARD-BLOCK if gaming patterns detected
+6. **Test runner** — verifies tests pass (GREEN)
+7. **`spec-reviewer`** — confirms implementation matches spec AND satisfies `must_haves` acceptance criteria
+8. **`code-quality-reviewer`** — 11-dimension quality check
+9. **Cross-vendor review** (`second-opinion stage:diff`) — cost-gated per-task Codex review
+10. Re-review loop if any reviewer returns NEEDS_REWORK
+
+**Stage boundary gate:**
+11. **`loop-verifier`** — dispatched after each stage; returns `passed | gaps_found | human_needed`. `gaps_found` halts execution and generates fix tasks before the next stage can begin.
+
+**Completion gate:**
+`completion_state = "shipped"` is set ONLY after `loop-verifier` returns `passed` (or `human_needed` with explicit user sign-off). Task-count completion alone is never sufficient.
 
 ---
 

@@ -86,6 +86,48 @@ Only then does Claude investigate root cause. It plans a minimal fix (T-fix) and
 
 ---
 
+## #4: The Agent Declares Victory Without Checking
+
+> "Measurement is the first step that leads to control and eventually to improvement."
+>
+> H. James Harrington
+
+**The Problem.** Tasks complete. The summary says "done." But did the *goal* actually get achieved? Task-completion and goal-achievement are not the same thing. A plan can have all tasks marked green while the user's original outcome remains unmet — a missing integration, a wired-but-never-called feature, an acceptance criterion answered correctly on paper but never tested in the real codebase.
+
+The failure is subtle: Claude is genuinely trying to help. The summary is honest about what tasks were done. The gap is that no one verified the outcome independently, adversarially, starting from "not achieved" as the default hypothesis.
+
+**The Fix** is the `loop-verifier` agent. It is read-only, adversarial, and intentionally distrustful of narration. At each stage gate, it:
+
+- Reads the `must_haves` contract — observable truths, required artifacts, key wiring links — derived from your original goal
+- Runs a 4-level check on every artifact: exists → substantive (not a stub) → wired → real data flows through it
+- Runs behavioral probes that execute the actual code against the acceptance criteria
+- Returns `passed`, `gaps_found`, or `human_needed` — never "probably fine"
+
+The execution probes are the hard gate. A file can exist. A function can be imported. A test can pass. None of that is sufficient — the agent must observe the behavior you originally asked for. `completion_state = "shipped"` is blocked until the verifier says `passed`.
+
+---
+
+## #5: The Tests Pass But Prove Nothing
+
+> "A test that always passes is worse than no test — it creates false confidence."
+>
+> Common wisdom in the mutation testing community
+
+**The Problem.** Claude Code writes tests as part of the implementation. Those tests pass. But were they written to prove the behavior, or to fit the implementation? If the same agent writes both the code and the tests, the tests inherit the implementation's assumptions. They validate the code that was written, not the behavior that was required. A tautological test (`expected = sut(input); assert result == expected`) is green by construction — it can never fail, and it proves nothing.
+
+This isn't unique to AI. It's a well-known failure mode in human-written TDD when the "test first" contract isn't enforced. With AI, the failure mode is faster and more consistent: the tests are always structurally sound and always passing, which makes them harder to identify as hollow.
+
+**The Fix** is the `test-writer` agent — a separate agent whose only job is to write failing tests before any implementation exists. It:
+
+- Reads the `Test behaviors:` spec, not the implementation
+- Computes expected values independently (by hand, not by calling the SUT)
+- Proves each test RED before returning the file paths
+- Refuses to touch any production or source file — if asked, it replies `BLOCKED`
+
+The orchestrator hash-locks the test files after `test-writer` returns. The implementer that runs next cannot modify them. Two static analyzers (`detect-test-gaming`, `detect-tautological-tests`) scan the implementation for gaming patterns — hardcoded returns for test inputs, SUT-as-oracle, stack inspection — and HARD-BLOCK on a match. The chain: separate author → locked tests → implementation → gaming scan → mutation proof.
+
+---
+
 ## Reference
 
 ### Planning
@@ -98,10 +140,12 @@ Only then does Claude investigate root cause. It plans a minimal fix (T-fix) and
 
 ### Supporting agents
 
-The installer optionally adds 40 agents across 8 groups. The skills use these at runtime — you pick which groups to install. Full reference: [docs/agents.md](docs/agents.md).
+The installer optionally adds 42 agents across 8 groups. The skills use these at runtime — you pick which groups to install. Full reference: [docs/agents.md](docs/agents.md).
 
 **Universal** — used across all stacks:
 
+- [`loop-verifier`](docs/agents.md#loop-verifier) — goal-backward adversarial verifier (stage gates + terminal acceptance)
+- [`test-writer`](docs/agents.md#test-writer) — separate TDD test author, separation-of-duties anti-cheating control
 - [`spec-reviewer`](docs/agents.md#spec-reviewer) — verifies implementation matches the plan spec (Phase 7 gate)
 - [`code-quality-reviewer`](docs/agents.md#code-quality-reviewer) — 11-dimension code quality review (Phase 7 gate)
 - [`research-agent`](docs/agents.md#research-agent) — 5-step methodology research with date verification (Phase 3)
