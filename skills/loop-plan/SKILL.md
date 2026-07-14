@@ -211,6 +211,8 @@ Announce at start: "Using loop-plan skill. I will loop through exploration → q
 
 **Goal:** Map the code area affected by the task without modifying anything.
 
+**Autonomous impact-closure rule:** The initial explorer fanout is not sufficient by itself. Follow every unresolved symbol, caller, consumer, data shape, configuration boundary, test seam, generated-code boundary, and similar implementation with targeted read-only searches. Repeat exploration → synthesis → follow-up until all affected entry points are classified, edge cases are enumerated, and remaining unknowns are genuinely product decisions or inaccessible external behavior. Do not ask the user whether to inspect files that can be discovered from the repository.
+
 **Rules:**
 - Dispatch **1–3 read-only subagents in parallel** (single message, multiple Agent tool calls). Scale to need:
   - **1 explorer** — narrow/config/trivial tasks, single-file changes, `~/.claude/` config sessions.
@@ -261,6 +263,7 @@ Announce at start: "Using loop-plan skill. I will loop through exploration → q
 - Each subagent must report: file paths + line numbers + execution-flow traces + conventions observed.
 
 **After subagents return:**
+- Run targeted follow-up exploration for unresolved callers, downstream consumers, similar cases, configuration/persistence boundaries, and corner cases before synthesis is considered complete.
 - Synthesize findings into 1 paragraph per domain.
 - Write to `## Exploration findings` section of the plan file.
 - Increment `state.iteration` if this is a re-entry.

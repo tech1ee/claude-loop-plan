@@ -9,7 +9,8 @@ Use this for non-trivial or recurring bugs. For an obvious typo or one-line loca
 
 ## Non-negotiable contract
 
-- Before approval, do not modify production code, tests, or configuration. A regression test or throwaway harness may be created only if the user has authorized investigation artifacts; otherwise stop after proposing it.
+- Before approval, do not modify production code, tests, or configuration. A regression test or throwaway harness may be created only if it is explicitly part of the investigation artifact; otherwise describe it first.
+- Investigate autonomously until root-cause and impact closure. Do not stop at the first plausible stack frame or ask the user to pick among hypotheses while repository evidence can discriminate them.
 - Prefer a deterministic failing test. If no test seam exists, use a CLI/HTTP/fixture replay or minimal harness and document why it is trustworthy.
 - Never hide a failing reproduction, swallow an assertion failure, or declare a bug fixed because a command exited successfully.
 - Use read-only subagents for investigation. One writer only after approval; do not run concurrent writers in the same worktree.
@@ -30,19 +31,25 @@ Extract the bug signature:
 
 Choose the strongest available feedback loop: deterministic test, CLI fixture, HTTP request, replay, differential run, or bounded fuzz loop. Run it before changing the suspected implementation. Record the exact command and failure. If it passes, stop: the report is stale or the reproduction is wrong. Do not proceed to root-cause claims without red evidence.
 
-## Phase 1 — Investigate
+## Phase 1 — Investigate and close the causal graph
 
-Run up to three read-only subagents in parallel:
+Run 3–5 read-only subagents in parallel:
 
 1. root-cause trace: origin → propagation → symptom, with `path:line` evidence;
-2. impact scope: callers, entry points, shared state, and adjacent code paths;
-3. test coverage: existing tests, missed assertions, and the smallest useful regression set.
+2. impact scope: callers, entry points, shared state, retries, background jobs, and adjacent paths;
+3. test audit: coverage, assertion quality, fixture realism, mocks, false positives, missing negative cases, and whether tests can fail on the bug;
+4. similar-case search: sibling implementations, historical fixes, related error signatures, and the same invariant across the codebase;
+5. boundary sweep: concurrency, cancellation, malformed/empty input, permissions, persistence, platform differences, and recovery paths.
 
-Ask for ranked hypotheses and one cheap discriminator per hypothesis. Distinguish facts, inferences, and unknowns. Stop at the first confirmed cause; do not expand into unrelated cleanup.
+Ask for ranked hypotheses and one cheap discriminator per hypothesis. Distinguish facts, inferences, and unknowns. Continue targeted follow-up searches until the confirmed cause explains the observed symptom and every affected entry point is classified. If hypotheses remain, run discriminating probes or focused tests autonomously before asking the user.
 
-## Phase 2 — Clarify
+### Test audit requirements
 
-Ask at most four questions: desired user-visible acceptance, fix boundary, hotfix versus durable fix, and whether prevention work is in scope. Convert answers to observable `must_haves`. Include the red reproduction as a required artifact and a key link from reproduction → fix → green verification.
+Classify relevant tests as **proves**, **partially proves**, **characterizes only**, **tautological/unsafe**, or **missing**. Check that expected values are independent from the SUT, failure assertions match the reported bug, mocks preserve the dangerous invariant, and integration boundaries are exercised where unit tests can lie. Propose the smallest regression set plus future-prevention tests. Coverage percentage alone is never accepted as evidence.
+
+## Phase 2 — Clarify only irreducible decisions
+
+After causal and test-audit closure, ask at most four questions: desired user-visible acceptance, fix boundary, hotfix versus durable fix, and whether prevention work is in scope. Do not ask the user to select a root cause that can be tested from repository evidence. Convert answers to observable `must_haves`. Include the red reproduction as a required artifact and key links from reproduction → root cause → fix → green verification → prevention.
 
 ## Phase 3 — Research
 
@@ -50,11 +57,11 @@ Use `researcher` only for questions that can change the fix or prevention design
 
 ## Phase 4 — Plan
 
-Emit exactly three conceptual slices:
+Emit exactly three conceptual slices and attach the causal graph, impact matrix, similar-case results, and test-audit verdicts:
 
 1. **Regression** — the red reproduction, locked conceptually; it must fail for the reported reason, not an unrelated error.
 2. **Minimal fix** — only the confirmed root-cause path; no opportunistic refactor.
-3. **Prevention** — a small, prioritized option such as a contract test, invariant, type constraint, lint rule, or fixture harness. Implement it only if the user includes it in scope.
+3. **Prevention** — a small, prioritized option such as a contract test, invariant, type constraint, lint rule, or fixture harness. Include similar-case hardening when the same invariant appears elsewhere. Implement it only if the user includes it in scope.
 
 For each slice list files, dependencies, test commands, reviewer, rollback, and definition of done. Add an impact matrix for every affected entry point.
 
@@ -68,6 +75,8 @@ After approval, one `worker` implements the minimal fix. Keep the regression ass
 
 - the fix addresses the confirmed origin;
 - the reported path is green and adjacent entry points remain safe;
+- the test audit confirms regression and prevention tests can fail on their targets;
+- similar cases are covered or explicitly dispositioned;
 - no test gaming, swallowed errors, or scope creep;
 - prevention is implemented only when approved.
 

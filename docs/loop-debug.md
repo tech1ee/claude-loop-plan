@@ -66,15 +66,17 @@ Then it writes **T0a**, a regression test that:
 
 ### Phase 1 — Investigate
 
-Three parallel explorers investigate the codebase simultaneously:
+The initial explorers investigate the codebase simultaneously, then the orchestrator performs targeted follow-up searches until the causal graph is closed:
 
 | Explorer | Investigates |
 |----------|-------------|
 | **Root-cause** | Traces the execution path to where the failure originates |
-| **Scope** | Maps all callers and consumers that could be affected by the fix |
-| **Existing coverage** | Finds tests that already cover the affected code — what's protected, what isn't |
+| **Scope** | Maps all callers, consumers, retries, jobs, and shared invariants affected by the fix |
+| **Test audit** | Classifies tests as proves/partial/characterization/unsafe/missing; audits oracles, mocks, fixtures, and boundary coverage |
+| **Similar cases** | Finds sibling implementations, historical fixes, related error signatures, and same-class failures |
+| **Boundary sweep** | Checks concurrency, cancellation, malformed input, permissions, persistence, platform, and recovery paths |
 
-If 3 or more plausible root-cause hypotheses emerge, Claude automatically activates adversarial agent mode: multiple agents investigate competing hypotheses and challenge each other's findings.
+The loop does not ask the user whether to investigate discoverable repository evidence. It continues fanout → synthesis → targeted follow-up until entry points, similar cases, edge cases, and test gaps are classified. If 3 or more plausible root-cause hypotheses emerge, Claude automatically activates adversarial agent mode: multiple agents investigate competing hypotheses and challenge each other's findings.
 
 ---
 
@@ -87,7 +89,7 @@ A targeted `AskUserQuestion` to confirm:
 - **Fix shape** — minimal patch, refactor the surrounding code, or address the root class?
 - **Acceptance** — what does "fixed" look like? Is there an existing test we can point to?
 
-After your answers, Claude synthesizes the acceptance criteria into a `must_haves` contract — observable truths, required artifacts, key wiring links. **HARD GATE:** Cannot advance to Phase 3 if any acceptance criterion is non-observable ("feels faster", "doesn't crash sometimes"). The `loop-verifier` agent will check this contract at terminal acceptance — beyond just "T0a is GREEN."
+After causal closure, Claude asks only irreducible product decisions. It synthesizes the acceptance criteria into a `must_haves` contract — observable truths, required artifacts, key wiring links. **HARD GATE:** Cannot advance to Phase 3 if any acceptance criterion is non-observable ("feels faster", "doesn't crash sometimes"). The `loop-verifier` agent will check this contract at terminal acceptance — beyond just "T0a is GREEN."
 
 > [!NOTE]
 > Intensity (minimal/standard/hardened) is **not** chosen here. It's Phase 5 — after you've seen the root-cause findings and plan. This order matters: you can't know the right intensity until you know how deep the bug goes.
@@ -107,7 +109,7 @@ Date-strict research focused on this specific bug class:
 
 ### Phase 4 — Plan
 
-Three-task structure written to `~/.claude/plans/debug-<slug>.md`:
+Three-task structure written to `~/.claude/plans/debug-<slug>.md` (including the causal graph, impact matrix, similar-case disposition, and test-audit verdicts):
 
 ```
 T0a — Regression test (already written in Phase 0)

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.2 — 2026-07-14
+
+**Proactive investigation improvements:**
+- Loop planning now requires autonomous impact-closure: follow-up exploration maps callers, consumers, boundaries, similar cases, edge cases, and residual unknowns before asking product questions.
+- Loop debugging now performs causal-graph closure instead of stopping at the first plausible stack frame.
+- Added explicit test-quality audits covering oracle independence, mock realism, boundary coverage, tautological tests, missing negative cases, and prevention tests.
+- Similar-case search and adjacent-entry-point disposition are now required before a debug fix is considered verified.
+
 ## v0.4.1 — 2026-07-14
 
 **Release fix:**

@@ -185,6 +185,8 @@ Plus the `intensity` field at Phase 5 (mirrors loop-plan's `state.rigor`):
 
 **Goal:** Map root cause + scope of impact + existing test coverage for the bug. Read-only.
 
+**Autonomous closure rule:** Do not stop after the first plausible stack frame or ask the user to choose a hypothesis while repository evidence can discriminate it. After the initial fanout, run targeted follow-up searches for every unresolved caller, shared invariant, sibling implementation, error path, fixture, mock, and configuration boundary. Continue until the causal graph explains the observed symptom, all affected entry points are classified, similar cases are dispositioned, and the test audit identifies what would have caught and prevented recurrence. Ask the user only about irreducible product decisions.
+
 ### Subagent dispatch
 
 Dispatch **2–3 read-only explorers in parallel** (single message, multiple Agent tool calls). Each gets ONE domain. Stack-specific (`android-kmp-explorer` for Kotlin/KMP/Compose, `swiftui-explorer` for iOS, generic Explore for web/other):
@@ -206,14 +208,18 @@ For the buggy code path, find every entry point that can hit it. Return:
 - **External entry points** that hit the buggy path (HTTP routes, intents, deep links, background jobs, scheduled tasks).
 - **Data flows** — what state passes through the buggy code; where else does the same state shape exist (potential same-class bug elsewhere).
 
-#### Domain 3 — Existing test coverage
+#### Domain 3 — Existing test coverage and test quality audit
 
-For the buggy code + the entry points found in Domain 2, find existing tests. Return:
+For the buggy code + the entry points found in Domain 2, find existing tests and audit whether they can fail on this bug. Return:
 
 - **Tests that cover the buggy path** (file:line, what they assert).
-- **Tests that should have caught the bug but didn't** (gaps).
-- **TestPrune-style minimal set** — the smallest test set that exercises the bug surface across all entry points (per Phase 3 finding Q1 — large suites add noise to LLM debugging).
-- **Coverage classification** per touched file: none / unit only / integration only / both.
+- **Tests that should have caught the bug but didn't** (gaps and why).
+- **Quality verdict per test:** proves | partially proves | characterizes only | tautological/unsafe | missing.
+- **Oracle audit:** expected values independently computed; no SUT-as-oracle, fixture branching, swallowed failures, or implementation-coupled assertions.
+- **Boundary audit:** realistic mocks/fixtures, integration seams, retries, cancellation, malformed/empty input, concurrency, permissions, and recovery paths relevant to the bug.
+- **TestPrune-style minimal set** — the smallest test set that exercises the bug surface across all entry points.
+- **Prevention set:** contract/invariant/property/fixture tests that prevent the same class recurring, plus similar code paths requiring the same protection.
+- **Coverage classification** per touched file: none / unit only / integration only / both. Coverage percentage alone is not evidence of quality.
 
 ### H1 — Always-on Codex root-cause explorer (per ADR-0023, tier-gated)
 
@@ -230,6 +236,7 @@ If Domain 1 returns ≥3 plausible root-cause hypotheses **with non-trivial evid
 
 ### After explorers return
 
+- If any caller, hypothesis, similar case, or test-audit item is unresolved, dispatch targeted read-only follow-up work before proceeding. Do not use the Phase 2 gate to outsource routine investigation.
 - Run the **automated citation verifier** on each report:
   ```bash
   ~/.claude/bin/verify-code-research.py /tmp/explorer-report-<domain>.md --json > /tmp/explorer-verify-<domain>.json
