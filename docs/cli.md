@@ -1,6 +1,24 @@
 # CLI Reference
 
-The `claude-skills` command manages your loop skills installation.
+The `claude-skills` command manages the Claude Code installation. The same npm package is also a native Pi package.
+
+## Pi installation
+
+Install globally or per project with Pi:
+
+```bash
+pi install npm:@loopskills/claude-skills
+# local checkout:
+pi install /absolute/path/to/claude-loop-plan
+```
+
+Pi loads the native skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` tool, work with the active OpenAI model, store plans under `.pi/plans/`, and require explicit approval before implementation. Pi package updates are managed by Pi:
+
+```bash
+pi update --extensions
+```
+
+The Claude Code installer below remains available for `~/.claude/` users.
 
 ## Commands
 

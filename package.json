@@ -1,7 +1,7 @@
 {
   "name": "@loopskills/claude-skills",
-  "version": "0.3.0",
-  "description": "loop-plan + loop-debug for Claude Code — iterative research-driven planning and debugging skills",
+  "version": "0.4.0",
+  "description": "Research-driven planning, debugging, and audit skills for Claude Code and Pi",
   "type": "module",
   "bin": {
     "claude-skills": "./dist/src/install.js"
@@ -28,7 +28,7 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "node --test dist/test/installer.test.js",
+    "test": "node --test dist/test/installer.test.js dist/test/pi-package.test.js",
     "test:e2e": "bash test/e2e-published.sh"
   },
   "repository": {
@@ -38,12 +38,19 @@
   "keywords": [
     "claude",
     "claude-code",
+    "pi-package",
+    "pi-coding-agent",
     "ai-agent",
     "loop-plan",
     "loop-debug",
     "planning",
     "tdd"
   ],
+  "pi": {
+    "skills": [
+      "./skills/pi"
+    ]
+  },
   "license": "MIT",
   "author": "Arman Aralbayev <t3ch1ee@gmail.com>"
 }

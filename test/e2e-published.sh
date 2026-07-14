@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# @loopskills/claude-skills v0.3.0 — full isolated E2E test suite
+# @loopskills/claude-skills v0.4.0 — full isolated E2E test suite
 # Tests the PUBLISHED package via "npm install --prefix" into a temp dir.
 # Never touches the real ~/.claude.
 set -uo pipefail
 
-PKG="@loopskills/claude-skills@0.3.0"
+PKG="@loopskills/claude-skills@0.4.0"
 PASS=0; FAIL=0; SKIP=0
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 
@@ -77,7 +77,7 @@ PKG_DIR="$INSTALL_ENV/node_modules/@loopskills/claude-skills"
 [ -d "$PKG_DIR" ] && pass "package installed to node_modules/" || { fail "package dir missing"; exit 1; }
 
 PKG_VER="$(node -e "console.log(require('$PKG_DIR/package.json').version)")"
-assert_eq "$PKG_VER" "0.3.0" "installed package.json version is 0.3.0"
+assert_eq "$PKG_VER" "0.4.0" "installed package.json version is 0.4.0"
 
 # ─────────────────────────────────────────────────────────────────────────────
 section "1. Security: no personal paths in package contents"
@@ -93,11 +93,17 @@ assert_eq "$HAS_POSTINSTALL" "no" "package.json: no postinstall script"
 
 assert_file "$PKG_DIR/checksums.txt" "checksums.txt present in package"
 
+PI_MANIFEST="$(node -e "const p=require('$PKG_DIR/package.json'); process.stdout.write(JSON.stringify(p.pi||{}))")"
+echo "$PI_MANIFEST" | grep -q 'skills/pi' && pass "Pi manifest declares skills/pi" || fail "Pi manifest missing skills/pi"
+
 # ─────────────────────────────────────────────────────────────────────────────
 section "2. Package structure: required files present"
 # ─────────────────────────────────────────────────────────────────────────────
 assert_file "$PKG_DIR/skills/loop-plan/SKILL.md"     "loop-plan SKILL.md present"
 assert_file "$PKG_DIR/skills/loop-debug/SKILL.md"    "loop-debug SKILL.md present"
+assert_file "$PKG_DIR/skills/pi/loop-plan/SKILL.md" "Pi loop-plan skill present"
+assert_file "$PKG_DIR/skills/pi/loop-debug/SKILL.md" "Pi loop-debug skill present"
+assert_file "$PKG_DIR/skills/pi/loop-audit/SKILL.md" "Pi loop-audit skill present"
 assert_dir  "$PKG_DIR/skills/loop-plan/references"   "loop-plan references/ dir present"
 assert_dir  "$PKG_DIR/agents"                        "agents/ dir present"
 assert_dir  "$PKG_DIR/bin"                           "bin/ dir present"

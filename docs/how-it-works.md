@@ -64,6 +64,12 @@ Phase 6  Drift + Exec   Drift rules 1-17; ExitPlanMode; RED→impl→GREEN→ver
   plans/                    Created by loop-plan at runtime (per-task)
 ```
 
+## Pi package surface
+
+`package.json` declares a Pi manifest with `skills: ["./skills/pi"]`. Pi therefore loads only the platform-safe skills under `skills/pi/`; it does not load the Claude Code installer payload or the Claude-only reference workflow. The Pi skills use the native `subagent` tool and project-local `.pi/plans/` artifacts. Install locally with `pi install /absolute/path/to/claude-loop-plan`, or install the published npm package.
+
+The Claude Code installer and its `~/.claude/` layout remain unchanged for backward compatibility.
+
 ## Update mechanism
 
 The installer performs a **non-blocking background check** on every run (unless `NO_UPDATE_NOTIFIER=1` or `CI=1`):

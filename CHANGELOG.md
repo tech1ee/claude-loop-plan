@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.0 — 2026-07-14
+
+**Pi support:**
+- Added a first-class Pi package manifest (`package.json` → `pi.skills`).
+- Added Pi-native `loop-plan`, `loop-debug`, and `loop-audit` skills.
+- Pi workflows use native `subagent` orchestration, OpenAI-compatible model selection, `.pi/plans/` artifacts, explicit approval gates, and one-writer safety.
+- Added package-discovery and portability tests for Pi.
+- Preserved the existing Claude Code installer and skill payload unchanged except for an AskUserQuestion gate contradiction fix.
+
 ## v0.3.0 — 2026-05-23
 
 **New agents (2):**

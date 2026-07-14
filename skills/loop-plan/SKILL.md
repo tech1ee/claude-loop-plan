@@ -22,7 +22,7 @@ A **looping** planner that alternates codebase research, interactive questions, 
 - User types `/ship-it` (if defined as an alias)
 
 **Hard caps** (safety only — not a budget the user has to use):
-- Maximum AskUserQuestion calls per loop iteration: **2** (each call 1–4 questions × 2–4 options)
+- Maximum AskUserQuestion calls per phase entry: **2** (each call 1–4 questions × 2–4 options). Phase 2 Q0 is a separate exempt call; Phase 2a vision grilling uses at most one additional call.
 - Maximum WebSearch queries per research phase: **15**
 - Maximum parallel explorer agents dispatched per exploration phase: **3** (default is 1-2; scale to 3 only for cross-cutting tasks)
 - No cap on total loop iterations — user decides.
@@ -295,7 +295,7 @@ Announce at start: "Using loop-plan skill. I will loop through exploration → q
 
 **Method:** grill-me model — one AskUserQuestion at a time, walk the design tree, recommend an answer to each question. If a question can be answered by exploring the codebase, explore first instead of asking.
 
-**Five questions (separate AskUserQuestion calls, in order):**
+**Five questions (one AskUserQuestion call when possible; if the interface limits the call to four questions, use a second call for the fifth):**
 
 1. `header: "Longevity"` — "How long-lived should this be?" Options: Throwaway prototype / 1-2 year lifespan / Production core (5+ years). Recommended: longest that matches the feature's stated purpose.
 2. `header: "Scale"` — "How many users or callers?" Options: One internal caller / Small team (5-50) / Many teams or external API. Recommended: match to existing codebase patterns.
@@ -311,7 +311,7 @@ Announce at start: "Using loop-plan skill. I will loop through exploration → q
 Show the recommendation as the first option in Q0 with "(Recommended — based on your vision answers)" suffix.
 
 **Hard rules:**
-- Max 5 questions, all non-blocking (user can skip with "just go to Q0" or "skip vision").
+- Max 5 questions across at most 2 calls, all non-blocking (user can skip with "just go to Q0" or "skip vision").
 - Never re-run Phase 2a on iterations ≥ 2.
 - CONTEXT.md: append any new domain terms discovered during this grilling. Create CONTEXT.md lazily if missing.
 
