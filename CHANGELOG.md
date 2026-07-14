@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.1 — 2026-07-14
+
+**Release fix:**
+- Fixed the Pi package test to run on Node 18, the minimum supported Node version.
+
 ## v0.4.0 — 2026-07-14
 
 **Pi support:**
