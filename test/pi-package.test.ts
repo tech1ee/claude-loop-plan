@@ -8,9 +8,14 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 test('package declares Pi skills', async () => {
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as {
+    name?: string;
+    bin?: Record<string, string>;
     keywords?: string[];
     pi?: { skills?: string[] };
   };
+  assert.equal(pkg.name, '@loopskills/loop-skills');
+  assert.equal(pkg.bin?.['loop-skills'], './dist/src/install.js');
+  assert.equal(pkg.bin?.['claude-skills'], './dist/src/install.js');
   assert.ok(pkg.keywords?.includes('pi-package'));
   assert.deepEqual(pkg.pi?.skills, ['./skills/pi']);
 });

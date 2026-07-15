@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# @loopskills/claude-skills v0.4.5 — full isolated E2E test suite
+# @loopskills/loop-skills v0.5.0 — full isolated E2E test suite
 # Tests the PUBLISHED package via "npm install --prefix" into a temp dir.
 # Never touches the real ~/.claude.
 set -uo pipefail
 
-PKG="@loopskills/claude-skills@0.4.5"
+PKG="@loopskills/loop-skills@0.5.0"
 PASS=0; FAIL=0; SKIP=0
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 
@@ -70,14 +70,14 @@ if ! npm install --prefix "$INSTALL_ENV" "$PKG" >/dev/null 2>&1; then
     exit 1
 fi
 
-CLI_BIN="$INSTALL_ENV/node_modules/.bin/claude-skills"
-PKG_DIR="$INSTALL_ENV/node_modules/@loopskills/claude-skills"
+CLI_BIN="$INSTALL_ENV/node_modules/.bin/loop-skills"
+PKG_DIR="$INSTALL_ENV/node_modules/@loopskills/loop-skills"
 
-[ -f "$CLI_BIN" ] && pass "CLI binary available: node_modules/.bin/claude-skills" || { fail "CLI binary missing"; exit 1; }
+[ -f "$CLI_BIN" ] && pass "CLI binary available: node_modules/.bin/loop-skills" || { fail "CLI binary missing"; exit 1; }
 [ -d "$PKG_DIR" ] && pass "package installed to node_modules/" || { fail "package dir missing"; exit 1; }
 
 PKG_VER="$(node -e "console.log(require('$PKG_DIR/package.json').version)")"
-assert_eq "$PKG_VER" "0.4.5" "installed package.json version is 0.4.5"
+assert_eq "$PKG_VER" "0.5.0" "installed package.json version is 0.5.0"
 
 # ─────────────────────────────────────────────────────────────────────────────
 section "1. Security: no personal paths in package contents"

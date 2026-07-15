@@ -66,7 +66,7 @@ Phase 6  Drift + Exec   Drift rules 1-17; ExitPlanMode; RED→impl→GREEN→ver
 
 ## Pi package surface
 
-`package.json` declares a Pi manifest with `skills: ["./skills/pi"]`. Pi therefore loads only the platform-safe skills under `skills/pi/`; it does not load the Claude Code installer payload or the Claude-only reference workflow. The Pi skills use the native `subagent` tool and project-local `.pi/plans/` artifacts. The bundled extensions expose `loop_progress`, `loop_inventory`, and `loop_evidence` tools. They render a persistent checkpoint widget above the editor, snapshot available agents/skills/extensions/packages/tools/models/MCP configuration, and maintain source-backed evidence in the plan state; `/loop-progress clear` removes the widget. Install locally with `pi install /absolute/path/to/claude-loop-plan`, or install the published npm package.
+`package.json` declares a Pi manifest with `skills: ["./skills/pi"]`. Pi therefore loads only the platform-safe skills under `skills/pi/`; it does not load the Claude Code installer payload or the Claude-only reference workflow. The Pi skills use the native `subagent` tool and project-local `.pi/plans/` artifacts. The bundled extensions expose `loop_progress`, `loop_inventory`, and `loop_evidence` tools. They render a persistent checkpoint widget above the editor, snapshot available agents/skills/extensions/packages/tools/models/MCP configuration, and maintain source-backed evidence in the plan state; `/loop-progress clear` removes the widget. Install locally with `pi install /absolute/path/to/loop-skills`, or install the published npm package.
 
 ### Adaptive loop efficiency
 
@@ -83,4 +83,4 @@ The installer performs a **non-blocking background check** on every run (unless 
 3. If a newer version exists, prints a one-line notice after the install completes.
 4. The fetch is fire-and-forget — it never blocks or fails the install.
 
-To explicitly update: `claude-skills update` runs `npm install -g @loopskills/claude-skills@latest`.
+To explicitly update: `loop-skills update` runs `npm install -g @loopskills/loop-skills@latest`.

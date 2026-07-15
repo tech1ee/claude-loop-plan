@@ -9,7 +9,7 @@
 **Model:** sonnet **When:** Phase 1, read-only research
 **Returns:** file paths, line numbers, component tree, execution flows, refactoring candidates, deepening opportunities
 **Related:** `react-hooks-misuse-auditor` (audit after exploration), `nextjs-rsc-boundary-auditor` (audit RSC boundaries)
-**Install:** `npx @loopskills/claude-skills --agents react-nextjs-explorer`
+**Install:** `npx @loopskills/loop-skills --agents react-nextjs-explorer`
 
 ---
 
@@ -18,7 +18,7 @@
 **Model:** sonnet **When:** before merge on React component changes
 **Returns:** hooks misuse findings with severity HIGH/MED/LOW
 **Related:** delegates RSC boundary issues to `nextjs-rsc-boundary-auditor`
-**Install:** `npx @loopskills/claude-skills --agents react-hooks-misuse-auditor`
+**Install:** `npx @loopskills/loop-skills --agents react-hooks-misuse-auditor`
 
 ---
 
@@ -27,4 +27,4 @@
 **Model:** sonnet **When:** before merge on Next.js page/component changes
 **Returns:** RSC boundary violation findings with severity
 **Related:** delegates hooks misuse to `react-hooks-misuse-auditor`
-**Install:** `npx @loopskills/claude-skills --agents nextjs-rsc-boundary-auditor`
+**Install:** `npx @loopskills/loop-skills --agents nextjs-rsc-boundary-auditor`

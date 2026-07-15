@@ -9,7 +9,7 @@
 **Model:** sonnet **When:** before merge on Python async code changes
 **Returns:** async correctness findings with severity
 **Related:** delegates migration/ORM concerns to `django-fastapi-safety-auditor`
-**Install:** `npx @loopskills/claude-skills --agents python-async-correctness-auditor`
+**Install:** `npx @loopskills/loop-skills --agents python-async-correctness-auditor`
 
 ---
 
@@ -18,4 +18,4 @@
 **Model:** sonnet **When:** before merge on Django migrations / models / views, FastAPI routers
 **Returns:** backend safety findings with severity
 **Related:** delegates async correctness to `python-async-correctness-auditor`
-**Install:** `npx @loopskills/claude-skills --agents django-fastapi-safety-auditor`
+**Install:** `npx @loopskills/loop-skills --agents django-fastapi-safety-auditor`

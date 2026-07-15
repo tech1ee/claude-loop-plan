@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 — 2026-07-15
+
+**Brand and package rename:**
+- Renamed the primary package to `@loopskills/loop-skills`.
+- Renamed the primary CLI to `loop-skills`; `claude-skills` remains an installation alias for compatibility.
+- Renamed the GitHub repository to `tech1ee/loop-skills`.
+- Updated public documentation, agent install examples, badges, repository links, release tests, and metadata.
+- Existing `@loopskills/claude-skills` installs remain available and are not removed.
+
 ## v0.4.5 — 2026-07-15
 
 **Adaptive orchestration and capability discovery:**

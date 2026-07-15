@@ -1,15 +1,15 @@
 # CLI Reference
 
-The `claude-skills` command manages the Claude Code installation. The same npm package is also a native Pi package.
+The `loop-skills` command manages the Claude Code installation. The same npm package is also a native Pi package. `claude-skills` remains an alias for compatibility with older installs.
 
 ## Pi installation
 
 Install globally or per project with Pi:
 
 ```bash
-pi install npm:@loopskills/claude-skills
+pi install npm:@loopskills/loop-skills
 # local checkout:
-pi install /absolute/path/to/claude-loop-plan
+pi install /absolute/path/to/loop-skills
 ```
 
 Pi loads the native skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` tool, work with the active OpenAI model, store plans under `.pi/plans/`, and require explicit approval before implementation. The package also provides `loop_progress`, `loop_inventory`, and `loop_evidence` tools for live checkpoints, capability discovery, and source-backed adaptive investigation. Pi package updates are managed by Pi:
@@ -25,9 +25,9 @@ The Claude Code installer below remains available for `~/.claude/` users.
 ### Default — run the installer
 
 ```bash
-npx @loopskills/claude-skills
+npx @loopskills/loop-skills
 # or
-claude-skills
+loop-skills
 ```
 
 Launches the interactive installer. Prompts for which skills and agents to install, shows each file write before it happens, and confirms before overwriting existing files.
@@ -37,17 +37,17 @@ Launches the interactive installer. Prompts for which skills and agents to insta
 ### `update`
 
 ```bash
-claude-skills update
+loop-skills update
 ```
 
-Updates to the latest version by running `npm install -g @loopskills/claude-skills@latest`, then re-runs the installer with `--force` to overwrite existing files.
+Updates to the latest version by running `npm install -g @loopskills/loop-skills@latest`, then re-runs the installer with `--force` to overwrite existing files.
 
 ---
 
 ### `list`
 
 ```bash
-claude-skills list
+loop-skills list
 ```
 
 Shows installed skills, their versions, and install timestamps from `~/.claude/skills/.install-receipt.json`.
@@ -68,7 +68,7 @@ Installed agents:
   android-kmp-explorer
   swiftui-explorer
 
-Package: @loopskills/claude-skills v0.1.0
+Package: @loopskills/loop-skills v0.1.0
 ```
 
 ---
@@ -76,7 +76,7 @@ Package: @loopskills/claude-skills v0.1.0
 ### `verify`
 
 ```bash
-claude-skills verify
+loop-skills verify
 ```
 
 Re-verifies SHA-256 checksums of all installed files against `checksums.txt` from the package. Reports any files that have been modified since install.
@@ -97,7 +97,7 @@ All checksums match.
 ### `uninstall`
 
 ```bash
-claude-skills uninstall
+loop-skills uninstall
 ```
 
 Removes all files that were installed. Shows the list of files to be deleted and asks for confirmation before proceeding.
@@ -112,8 +112,8 @@ Removes all files that were installed. Shows the list of files to be deleted and
 ### `--dry-run`
 
 ```bash
-claude-skills --dry-run
-claude-skills --dry-run --skills loop-plan
+loop-skills --dry-run
+loop-skills --dry-run --skills loop-plan
 ```
 
 Shows exactly what would be installed without writing any files. Use to preview a fresh install or upgrade.
@@ -123,18 +123,18 @@ Shows exactly what would be installed without writing any files. Use to preview 
 ### `--force`
 
 ```bash
-claude-skills --force
+loop-skills --force
 ```
 
-Skips the conflict confirmation prompt. Overwrites existing files without asking. Used by `claude-skills update` internally.
+Skips the conflict confirmation prompt. Overwrites existing files without asking. Used by `loop-skills update` internally.
 
 ---
 
 ### `--skills <list>`
 
 ```bash
-claude-skills --skills loop-plan
-claude-skills --skills loop-plan,loop-debug
+loop-skills --skills loop-plan
+loop-skills --skills loop-plan,loop-debug
 ```
 
 Install only the specified skills (comma-separated). Skips the interactive skill selection prompt.
@@ -146,8 +146,8 @@ Valid values: `loop-plan`, `loop-debug`
 ### `--no-agents`
 
 ```bash
-claude-skills --no-agents
-claude-skills --skills loop-plan --no-agents
+loop-skills --no-agents
+loop-skills --skills loop-plan --no-agents
 ```
 
 Skip agent installation entirely. Installs only the skill files (SKILL.md + references).
@@ -157,7 +157,7 @@ Skip agent installation entirely. Installs only the skill files (SKILL.md + refe
 ### `--no-bin`
 
 ```bash
-claude-skills --no-bin
+loop-skills --no-bin
 ```
 
 Skip installation of Python helper scripts to `~/.claude/bin/`. The bin scripts are optional — the skills work without them, but some features (ADR management, test integrity, citation verification) won't be available.
@@ -171,7 +171,7 @@ Skip installation of Python helper scripts to `~/.claude/bin/`. The bin scripts 
 Suppresses the non-blocking update check that runs on every install.
 
 ```bash
-NO_UPDATE_NOTIFIER=1 claude-skills
+NO_UPDATE_NOTIFIER=1 loop-skills
 ```
 
 ### `CI=1`
@@ -193,7 +193,7 @@ The check is fire-and-forget — it never blocks the install. The cache prevents
 ```
 ╭──────────────────────────────────────────────────────╮
 │  Update available: v0.1.0 → v0.2.0                   │
-│  Run: claude-skills update                           │
+│  Run: loop-skills update                           │
 ╰──────────────────────────────────────────────────────╯
 ```
 
@@ -216,4 +216,4 @@ After every successful install, a receipt is written to `~/.claude/skills/.insta
 }
 ```
 
-`claude-skills list` and `claude-skills verify` both read from this file.
+`loop-skills list` and `loop-skills verify` both read from this file.

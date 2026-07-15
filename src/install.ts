@@ -16,7 +16,7 @@ const CLAUDE_DIR = join(homedir(), '.claude');
 const VERSION = JSON.parse(
   await readFile(join(PKG_ROOT, 'package.json'), 'utf8')
 ).version as string;
-const PKG_NAME = '@loopskills/claude-skills';
+const PKG_NAME = '@loopskills/loop-skills';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -155,7 +155,7 @@ interface InstallOptions {
 }
 
 async function install(opts: InstallOptions): Promise<void> {
-  p.intro('Claude Skills Installer');
+  p.intro('Loop Skills Installer');
 
   // ── skill selection ──
   let selectedSkills: SkillName[] = opts.skills ?? [];
@@ -284,14 +284,14 @@ async function install(opts: InstallOptions): Promise<void> {
   }, null, 2));
   receiptSpinner.stop('Receipt written.');
 
-  p.outro(`Done! Start Claude Code and type /loop-plan to begin.\n  Uninstall: claude-skills uninstall`);
+  p.outro(`Done! Start Pi or Claude Code and type /loop-plan to begin.\n  Uninstall: loop-skills uninstall`);
 
   // Non-blocking update check (fire-and-forget)
   checkUpdate(VERSION);
 }
 
 async function initCommand(): Promise<void> {
-  p.intro('Claude Skills — Project Init');
+  p.intro('Loop Skills — Project Init');
 
   const cwd = process.cwd();
   const hasGit = await exists(join(cwd, '.git'));
@@ -353,7 +353,7 @@ async function initCommand(): Promise<void> {
   }
 
   spinner.stop('Foundation scaffolded.');
-  p.outro('Run claude-skills to install loop-plan + agents, then open a new Claude Code session.');
+  p.outro('Run loop-skills to install loop-plan + agents, then open a new Pi or Claude Code session.');
 }
 
 async function updateCommand(): Promise<void> {
@@ -382,10 +382,10 @@ async function updateCommand(): Promise<void> {
     });
     if (p.isCancel(proceed) || !proceed) { p.cancel('Cancelled.'); return; }
     execSync(`npm install -g ${PKG_NAME}@latest`, { stdio: 'inherit' });
-    p.outro('Update complete. Re-run claude-skills to install updated skill files.');
+    p.outro('Update complete. Re-run loop-skills to install updated skill files.');
   } catch {
     spinner.stop('Could not reach registry.');
-    p.outro('Try: npm install -g @loopskills/claude-skills@latest');
+    p.outro('Try: npm install -g @loopskills/loop-skills@latest');
   }
 }
 
@@ -397,7 +397,7 @@ async function listCommand(): Promise<void> {
     console.log(`Skills: ${receipt.skills.join(', ')}`);
     console.log(`Agents: ${receipt.agents.join(', ')}`);
   } catch {
-    console.log('No install receipt found. Run claude-skills to install.');
+    console.log('No install receipt found. Run loop-skills to install.');
   }
 }
 
@@ -415,7 +415,7 @@ async function verifyCommand(): Promise<void> {
     console.log(`Verify: ${ok} OK, ${fail} changed/missing`);
     process.exit(fail > 0 ? 1 : 0);
   } catch {
-    console.error('No install receipt found. Run claude-skills to install first.');
+    console.error('No install receipt found. Run loop-skills to install first.');
     process.exit(1);
   }
 }

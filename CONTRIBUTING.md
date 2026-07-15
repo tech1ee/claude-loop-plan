@@ -5,8 +5,8 @@ Thanks for wanting to improve loop skills. Contributions are welcome — bug fix
 ## Setup
 
 ```bash
-git clone https://github.com/tech1ee/claude-loop-plan
-cd claude-loop-plan
+git clone https://github.com/tech1ee/loop-skills
+cd loop-skills
 npm install
 npm run build
 npm test
@@ -23,7 +23,7 @@ All of these must pass before opening a PR.
 
 ### Skill content improvements
 
-The most valuable contributions. If a phase produces bad output for your use case, open a [skill improvement issue](https://github.com/tech1ee/claude-loop-plan/issues/new?template=skill_improvement.yml) first — describe what broke and what should have happened. This helps narrow down which phase and what kind of fix is needed.
+The most valuable contributions. If a phase produces bad output for your use case, open a [skill improvement issue](https://github.com/tech1ee/loop-skills/issues/new?template=skill_improvement.yml) first — describe what broke and what should have happened. This helps narrow down which phase and what kind of fix is needed.
 
 Skill files live in:
 - `skills/loop-plan/SKILL.md` + `skills/loop-plan/references/`

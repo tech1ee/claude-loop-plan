@@ -2,10 +2,10 @@
 
 <br>
 
-# 🔄 Claude Loop Skills
+# 🔄 Loop Skills
 
-[![CI](https://github.com/tech1ee/claude-loop-plan/actions/workflows/ci.yml/badge.svg)](https://github.com/tech1ee/claude-loop-plan/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@loopskills/claude-skills?color=brightgreen&label=npm)](https://www.npmjs.com/package/@loopskills/claude-skills)
+[![CI](https://github.com/tech1ee/loop-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/tech1ee/loop-skills/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@loopskills/loop-skills?color=brightgreen&label=npm)](https://www.npmjs.com/package/@loopskills/loop-skills)
 [![Node.js ≥18](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
@@ -18,12 +18,12 @@
 1. Run the installer:
 
 ```bash
-npx @loopskills/claude-skills
+npx @loopskills/loop-skills
 ```
 
 2. Pick which skills and supporting agents to install. Everything goes into `~/.claude/` — nothing else is touched.
 
-3. Open [Claude Code](https://claude.ai/code) and type `/loop-plan` or `/loop-debug`.
+3. Open Pi, Claude Code, or another supported agent and type `/loop-plan` or `/loop-debug`.
 
 That's it. You're ready to go.
 
@@ -32,11 +32,11 @@ That's it. You're ready to go.
 This package is also a native Pi package. From this repository (or after publishing), install it with:
 
 ```bash
-pi install /Users/you/path/to/claude-loop-plan
-# or: pi install npm:@loopskills/claude-skills
+pi install /Users/you/path/to/loop-skills
+# or: pi install npm:@loopskills/loop-skills
 ```
 
-Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled progress extension renders a checkpoint list above the editor with live step state, current-step progress, and short status descriptions through the `loop_progress` tool. The original Claude Code installer remains available via `npx @loopskills/claude-skills`.
+Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled progress extension renders a checkpoint list above the editor with live step state, current-step progress, and short status descriptions through the `loop_progress` tool. The installer also supports Claude Code via `npx @loopskills/loop-skills`; the legacy `@loopskills/claude-skills` package remains available for existing users.
 
 ---
 
@@ -239,11 +239,11 @@ The installer optionally adds 42 agents across 8 groups. The skills use these at
 Every release ships `checksums.txt` with SHA-256 digests of all installed files:
 
 ```bash
-cd $(npm root -g)/@loopskills/claude-skills
+cd $(npm root -g)/@loopskills/loop-skills
 sha256sum -c checksums.txt
 ```
 
-Or download `checksums.txt` from the [GitHub release](https://github.com/tech1ee/claude-loop-plan/releases) and verify the files in `~/.claude/` directly.
+Or download `checksums.txt` from the [GitHub release](https://github.com/tech1ee/loop-skills/releases) and verify the files in `~/.claude/` directly.
 
 ---
 
@@ -256,8 +256,8 @@ The installer has no `postinstall` hook — nothing runs automatically on `npm i
 ## Contributing
 
 ```bash
-git clone https://github.com/tech1ee/claude-loop-plan
-cd claude-loop-plan
+git clone https://github.com/tech1ee/loop-skills
+cd loop-skills
 npm install && npm run build && npm test
 ```
 
