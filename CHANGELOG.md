@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.3 — 2026-07-15
+
+**Limits visualization:**
+- Added a below-editor `loop-limits` widget with model context-window bars, session token/request/cost usage, provider billing mode, and optional configured windows.
+- Added `/loop-limits` refresh command.
+- Remote ChatGPT subscription quotas are explicitly shown as unavailable when Pi does not expose provider quota data; no fake percentages are generated.
+
 ## v0.5.2 — 2026-07-15
 
 **Publish metadata fix:**

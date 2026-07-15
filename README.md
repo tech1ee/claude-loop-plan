@@ -36,7 +36,7 @@ pi install /Users/you/path/to/loop-skills
 # or: pi install npm:loop-skills
 ```
 
-Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled progress extension renders a checkpoint list above the editor with live step state, current-step progress, and short status descriptions through the `loop_progress` tool. The installer also supports Claude Code via `npx loop-skills`; the legacy `@loopskills/claude-skills` package remains available for existing users.
+Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled extensions render a checkpoint list above the editor and a model/usage limits panel below it. The panel shows context-window percentage, session tokens/requests/cost, billing mode, and optional configured limits; `loop_progress` drives the loop checklist and `loop_limits` refreshes usage. Remote ChatGPT subscription quotas are labeled unavailable when Pi does not expose them. The installer also supports Claude Code via `npx loop-skills`; the legacy `@loopskills/claude-skills` package remains available for existing users.
 
 ---
 
