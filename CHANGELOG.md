@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.3 — 2026-07-14
+
+**Pi progress UI:**
+- Added the `loop_progress` tool and bundled Pi extension.
+- Displays a persistent checkpoint list above the editor with completed/running/blocked states, current-step progress bars, and short live descriptions.
+- Added `/loop-progress` and `/loop-progress clear` commands.
+- Loop-plan and loop-debug now update the panel at phase boundaries and during delegated investigation, review, and verification.
+- Added extension packaging, checksum, safety, and discovery coverage.
+
 ## v0.4.2 — 2026-07-14
 
 **Proactive investigation improvements:**

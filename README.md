@@ -36,7 +36,7 @@ pi install /Users/you/path/to/claude-loop-plan
 # or: pi install npm:@loopskills/claude-skills
 ```
 
-Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The original Claude Code installer remains available via `npx @loopskills/claude-skills`.
+Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled progress extension renders a checkpoint list above the editor with live step state, current-step progress, and short status descriptions through the `loop_progress` tool. The original Claude Code installer remains available via `npx @loopskills/claude-skills`.
 
 ---
 

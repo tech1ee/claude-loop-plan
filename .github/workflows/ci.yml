@@ -15,7 +15,7 @@ jobs:
 
       - name: Reject personal paths
         run: |
-          if grep -rn "/Users/arman" skills/ agents/ bin/ commands/ ci/ src/ \
+          if grep -rn "/Users/arman" skills/ agents/ bin/ commands/ extensions/ ci/ src/ \
             --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
             --include="*.sh" --include="*.json" 2>/dev/null; then
             echo "ERROR: personal path found in source files"
@@ -27,7 +27,7 @@ jobs:
           # vault-projects.json and personal-paths.md are private; skills may reference
           # ~/Documents/expertise/ as documented optional vault integration (OK)
           if grep -rn "vault-projects\.json\|rules/personal-paths\.md" \
-            skills/ agents/ bin/ commands/ ci/ src/ \
+            skills/ agents/ bin/ commands/ extensions/ ci/ src/ \
             --include="*.md" --include="*.ts" --include="*.mjs" --include="*.py" \
             2>/dev/null; then
             echo "ERROR: private config file reference found in source files"
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Scan for hidden Unicode
-        run: python3 ci/check-unicode.py skills/ agents/
+        run: python3 ci/check-unicode.py skills/ agents/ extensions/
 
   skill-safety:
     name: Skill shell-block safety
@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Scan for dangerous shell commands
-        run: python3 ci/check-skill-safety.py skills/ agents/
+        run: python3 ci/check-skill-safety.py skills/ agents/ extensions/
 
   checksum-verify:
     name: Checksum integrity

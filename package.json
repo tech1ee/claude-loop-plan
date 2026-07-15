@@ -1,6 +1,6 @@
 {
   "name": "@loopskills/claude-skills",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Research-driven planning, debugging, and audit skills for Claude Code and Pi",
   "type": "module",
   "bin": {
@@ -11,6 +11,7 @@
   },
   "files": [
     "dist/src/install.js",
+    "extensions/loop-progress.ts",
     "skills/",
     "agents/",
     "bin/",
@@ -49,7 +50,14 @@
   "pi": {
     "skills": [
       "./skills/pi"
+    ],
+    "extensions": [
+      "./extensions/loop-progress.ts"
     ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
   },
   "license": "MIT",
   "author": "Arman Aralbayev <t3ch1ee@gmail.com>"
