@@ -1,6 +1,6 @@
 {
   "name": "loop-skills",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Research-driven planning, debugging, and audit skills for Pi, Claude Code, and other agents",
   "type": "module",
   "bin": {
@@ -15,7 +15,6 @@
     "extensions/loop-progress.ts",
     "extensions/loop-inventory.ts",
     "extensions/loop-evidence.ts",
-    "extensions/loop-limits.ts",
     "skills/",
     "agents/",
     "bin/",
@@ -59,8 +58,7 @@
     "extensions": [
       "./extensions/loop-progress.ts",
       "./extensions/loop-inventory.ts",
-      "./extensions/loop-evidence.ts",
-      "./extensions/loop-limits.ts"
+      "./extensions/loop-evidence.ts"
     ]
   },
   "peerDependencies": {

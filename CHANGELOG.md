@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.4 — 2026-07-15
+
+**Scope correction:**
+- Moved the model/subscription limits panel out of the loop-skills package and into the local Pi setup.
+- Loop-skills remains focused on planning, debugging, evidence, inventory, and progress orchestration.
+
 ## v0.5.3 — 2026-07-15
 
 **Limits visualization:**
