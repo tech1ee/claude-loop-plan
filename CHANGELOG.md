@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.2 — 2026-07-15
+
+**Publish metadata fix:**
+- Normalized npm `bin` and repository metadata for the unscoped `loop-skills` package.
+
 ## v0.5.1 — 2026-07-15
 
 **Public package correction:**

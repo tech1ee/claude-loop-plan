@@ -1,11 +1,11 @@
 {
   "name": "loop-skills",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Research-driven planning, debugging, and audit skills for Pi, Claude Code, and other agents",
   "type": "module",
   "bin": {
-    "loop-skills": "./dist/src/install.js",
-    "claude-skills": "./dist/src/install.js"
+    "loop-skills": "dist/src/install.js",
+    "claude-skills": "dist/src/install.js"
   },
   "engines": {
     "node": ">=18"
@@ -38,7 +38,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tech1ee/loop-skills"
+    "url": "git+https://github.com/tech1ee/loop-skills.git"
   },
   "keywords": [
     "claude",
