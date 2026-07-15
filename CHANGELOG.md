@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.4 — 2026-07-15
+
+**Release fix:**
+- Synced `package-lock.json` with Pi peer dependencies so clean CI/npm installs work reliably.
+
 ## v0.4.3 — 2026-07-14
 
 **Pi progress UI:**

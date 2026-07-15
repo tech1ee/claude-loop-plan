@@ -1,6 +1,6 @@
 {
   "name": "@loopskills/claude-skills",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Research-driven planning, debugging, and audit skills for Claude Code and Pi",
   "type": "module",
   "bin": {
