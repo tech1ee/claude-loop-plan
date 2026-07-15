@@ -12,7 +12,7 @@ pi install npm:@loopskills/claude-skills
 pi install /absolute/path/to/claude-loop-plan
 ```
 
-Pi loads the native skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` tool, work with the active OpenAI model, store plans under `.pi/plans/`, and require explicit approval before implementation. Pi package updates are managed by Pi:
+Pi loads the native skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` tool, work with the active OpenAI model, store plans under `.pi/plans/`, and require explicit approval before implementation. The package also provides `loop_progress`, `loop_inventory`, and `loop_evidence` tools for live checkpoints, capability discovery, and source-backed adaptive investigation. Pi package updates are managed by Pi:
 
 ```bash
 pi update --extensions

@@ -19,10 +19,18 @@ test('Pi manifest exposes the progress extension', async () => {
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as {
     pi?: { extensions?: string[] };
   };
-  assert.deepEqual(pkg.pi?.extensions, ['./extensions/loop-progress.ts']);
-  const extension = await readFile(join(root, 'extensions', 'loop-progress.ts'), 'utf8');
-  assert.match(extension, /registerTool\(\{\s*name: "loop_progress"/s);
-  assert.match(extension, /setWidget\("loop-progress"/);
+  assert.deepEqual(pkg.pi?.extensions, [
+    './extensions/loop-progress.ts',
+    './extensions/loop-inventory.ts',
+    './extensions/loop-evidence.ts',
+  ]);
+  const progress = await readFile(join(root, 'extensions', 'loop-progress.ts'), 'utf8');
+  const inventory = await readFile(join(root, 'extensions', 'loop-inventory.ts'), 'utf8');
+  const evidence = await readFile(join(root, 'extensions', 'loop-evidence.ts'), 'utf8');
+  assert.match(progress, /registerTool\(\{\s*name: "loop_progress"/s);
+  assert.match(progress, /setWidget\("loop-progress"/);
+  assert.match(inventory, /name: "loop_inventory"/);
+  assert.match(evidence, /name: "loop_evidence"/);
 });
 
 test('Pi skills are discoverable and do not require Claude-only tools', async () => {

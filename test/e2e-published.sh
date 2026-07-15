@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# @loopskills/claude-skills v0.4.4 — full isolated E2E test suite
+# @loopskills/claude-skills v0.4.5 — full isolated E2E test suite
 # Tests the PUBLISHED package via "npm install --prefix" into a temp dir.
 # Never touches the real ~/.claude.
 set -uo pipefail
 
-PKG="@loopskills/claude-skills@0.4.4"
+PKG="@loopskills/claude-skills@0.4.5"
 PASS=0; FAIL=0; SKIP=0
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 
@@ -77,7 +77,7 @@ PKG_DIR="$INSTALL_ENV/node_modules/@loopskills/claude-skills"
 [ -d "$PKG_DIR" ] && pass "package installed to node_modules/" || { fail "package dir missing"; exit 1; }
 
 PKG_VER="$(node -e "console.log(require('$PKG_DIR/package.json').version)")"
-assert_eq "$PKG_VER" "0.4.4" "installed package.json version is 0.4.4"
+assert_eq "$PKG_VER" "0.4.5" "installed package.json version is 0.4.5"
 
 # ─────────────────────────────────────────────────────────────────────────────
 section "1. Security: no personal paths in package contents"

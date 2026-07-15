@@ -21,6 +21,10 @@ Use this for non-trivial features, refactors, architecture changes, and work whe
 
 Use the `loop_progress` tool throughout the loop. Initialize it before Phase 0 with this checkpoint list: Seed, Explore, Clarify, Research, Plan, Approval, Execute/Verify. Mark exactly one checkpoint `running`, update its percentage and short `detail` after meaningful work, and mark it `done` before advancing. If blocked, mark the checkpoint `blocked` and describe the blocker. The widget is the source of truth for the user's current loop status; do not leave it stale while doing delegated work.
 
+## Adaptive operating model
+
+Follow [`../references/adaptive-loop.md`](../references/adaptive-loop.md). At Seed, call `loop_inventory` and record the snapshot timestamp, active model/provider, available capabilities, and selected tier. Maintain an evidence ledger for claims and unresolved unknowns. Use the smallest budget that can close high-impact uncertainty; do not fan out by default. After each exploration round, reconcile duplicate evidence and choose the next highest-information probe. Stop on closure, diminishing returns, or budget exhaustion with residual risk documented.
+
 ## State and artifacts
 
 Derive a slug (lowercase kebab-case, max 40 characters). Store:
@@ -34,23 +38,25 @@ Resume an existing plan only after showing its current phase and asking whether 
 
 Set the Seed checkpoint to `running` before starting. Mark it `done` only after state and the initial plan exist.
 
-1. Restate the goal and measurable success criteria.
-2. Inspect repository instructions (`CLAUDE.md`, `AGENTS.md`, `CONTEXT.md`, contribution docs, ADRs) without imposing a new convention.
-3. Create the plan and state files.
-4. Identify stack, test commands, project root, and likely risk areas.
+1. Call `loop_inventory` before repository exploration. Inspect capabilities without exposing secrets or full prompt bodies.
+2. Triage the task as quick, standard, or high-risk and initialize the matching budget.
+3. Restate the goal and measurable success criteria.
+4. Inspect repository instructions (`CLAUDE.md`, `AGENTS.md`, `CONTEXT.md`, contribution docs, ADRs) without imposing a new convention.
+5. Create the plan and state files, including `inventory_snapshot`, `budget`, `evidence_ledger`, and `impact_closure`. Initialize the ledger with `loop_evidence`.
+6. Identify stack, test commands, project root, and likely risk areas.
 
 ## Phase 1 — Explore and close the impact map
 
 Set Explore to `running`; update its detail with the active fanout or follow-up search and its percentage as findings close.
 
-Run 2–4 read-only subagents in parallel, each with a distinct scope:
+Run the tier-appropriate number of read-only subagents in parallel, each with a distinct scope. Quick work starts with one scout; standard starts with 1–2; high-risk may use 3–5.
 
 1. Similar features and alternate execution paths.
 2. Architecture, dependencies, callers, configuration, persistence, and data flow.
 3. Tests, fixtures, mocks, coverage gaps, and failure assertions.
 4. Boundary and corner-case sweep: concurrency, retries, cancellation, empty/malformed input, permissions, migrations, platform differences, and error paths relevant to the stack.
 
-Ask each for evidence as `path:line`, not guesses. Use `scout` or `reviewer` for compact reconnaissance. If the repository is large, give each child explicit paths and a stop condition. Synthesize findings, then run follow-up read-only searches for every unresolved symbol, caller, data shape, and assumption. Repeat fanout → synthesis → targeted follow-up until:
+Ask each for evidence as `path:line`, not guesses. Use `scout` or `reviewer` for compact reconnaissance. If the repository is large, give each child explicit paths, the active budget, and a stop condition. Prefer discovered role agents and tools; otherwise use Pi built-ins. Do not spend a research call when local evidence resolves the question. Synthesize findings, then run follow-up read-only searches for every unresolved symbol, caller, data shape, and assumption. Repeat fanout → synthesis → targeted follow-up until:
 
 - every changed or proposed module has direct callers and downstream consumers mapped;
 - every entry point has a validation path or an explicitly documented gap;
@@ -58,7 +64,7 @@ Ask each for evidence as `path:line`, not guesses. Use `scout` or `reviewer` for
 - tests, mocks, fixtures, config, docs, and generated-code boundaries were checked;
 - remaining unknowns are genuinely product decisions or inaccessible external behavior.
 
-Record an `impact_closure` checklist in state. Do not ask the user to select more exploration while any of these closure items is false. Do not claim “no blind spots”; report coverage and residual unknowns honestly.
+Record an `impact_closure` checklist in state. Use `loop_evidence` to add claims as they are found and resolve them only with source-backed evidence; unresolved high-impact claims must drive the next probe. Do not ask the user to select more exploration while any of these closure items is false. Do not claim “no blind spots”; report coverage and residual unknowns honestly.
 
 ## Phase 2 — Clarify only decisions code cannot answer
 
@@ -72,11 +78,11 @@ If a criterion says “better”, “robust”, or “works”, rewrite it into 
 
 ## Phase 3 — Research
 
-Research only when it can change the design. Use the `researcher` subagent for current external evidence and official documentation. Do not require arbitrary source-count targets: prefer a few authoritative sources, record dates, URLs, confidence, and unresolved disagreements. For library questions, consult the library's current official docs first. Never fabricate citations or present undated claims as current.
+Research only when it can change the design and the research budget permits it. Use the discovered `researcher` capability for current external evidence and official documentation. Do not require arbitrary source-count targets: prefer a few authoritative sources, record dates, URLs, confidence, and unresolved disagreements. For library questions, consult the library's current official docs first. Never fabricate citations or present undated claims as current.
 
 ## Phase 4 — Emit the plan
 
-Write a concise implementation DAG. Include an `Impact closure` section with mapped entry points, consumers, similar cases, edge-case matrix, and unresolved unknowns. Every task includes:
+Before writing, reconcile the evidence ledger, record the stopping reason, budget usage, inventory snapshot, selected agents/models/tools, and residual unknowns. Write a concise implementation DAG. Include an `Impact closure` section with mapped entry points, consumers, similar cases, edge-case matrix, and unresolved unknowns. Every task includes:
 
 - objective and exact files likely to change;
 - dependencies and invariants;

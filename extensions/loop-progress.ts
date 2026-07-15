@@ -59,6 +59,9 @@ function normalize(input: ProgressInput, current?: Progress): Progress {
   if (input.stepId) {
     const step = steps.find((candidate) => candidate.id === input.stepId);
     if (!step) throw new Error(`Unknown loop step: ${input.stepId}`);
+    if (input.status === "running") {
+      for (const candidate of steps) if (candidate.id !== step.id && candidate.status === "running") candidate.status = "pending";
+    }
     if (input.status) step.status = input.status;
     if (input.percent !== undefined) step.percent = input.percent;
     if (input.status === "done") step.percent = 100;
@@ -72,7 +75,8 @@ function renderWidget(progress: Progress) {
     render(width: number): string[] {
       if (!progress.steps.length) return [];
       const completed = progress.steps.filter((step) => step.status === "done" || step.status === "skipped").length;
-      const overall = (completed / progress.steps.length) * 100;
+      const running = progress.steps.find((step) => step.status === "running");
+      const overall = ((completed + (running ? running.percent / 100 : 0)) / progress.steps.length) * 100;
       const lines = [
         theme.fg("accent", `◈ ${progress.loop}  ${progressBar(overall)}`),
         theme.fg("muted", `  ${progress.currentDetail}`),

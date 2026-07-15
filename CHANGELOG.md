@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.5 — 2026-07-15
+
+**Adaptive orchestration and capability discovery:**
+- Added the adaptive-loop protocol: triage tiers, explicit budgets, evidence ledger, information-gain probe selection, diminishing-return stopping, and residual-risk reporting.
+- Added `loop_inventory` to discover active tools, skills, agents, extensions, packages, models, and MCP configuration without exposing secrets or prompt bodies.
+- Added `loop_evidence` for atomic, source-backed claim tracking in `.pi/plans/*.state.json`.
+- Added capability-aware routing guidance for scouts, context builders, researchers, reviewers, workers, oracles, and user/project agents.
+- Added extension type-checking to the test pipeline and synchronized Pi peer dependencies.
+
 ## v0.4.4 — 2026-07-15
 
 **Release fix:**

@@ -20,13 +20,17 @@ Use this for non-trivial or recurring bugs. For an obvious typo or one-line loca
 
 Use the `loop_progress` tool throughout the loop. Initialize it before Phase 0 with: Reproduce, Investigate, Clarify, Research, Plan, Approval, Execute/Verify. Keep exactly one checkpoint `running`, update its percentage and short `detail` after meaningful work, and mark it `done` before advancing. Mark a checkpoint `blocked` with the concrete blocker instead of implying progress. Update the panel before and after delegated work, test audits, discriminating probes, and validation commands.
 
+## Adaptive operating model
+
+Follow [`../references/adaptive-loop.md`](../references/adaptive-loop.md). At Seed, call `loop_inventory` and record the snapshot timestamp, active model/provider, available capabilities, and selected tier. Maintain an evidence ledger for the causal graph, hypotheses, similar cases, and test-audit claims. Use bounded reproduction and investigation budgets; escalate only when impact or uncertainty justifies it. Reconcile evidence after each round and stop on causal closure, diminishing returns, or budget exhaustion with residual risk documented.
+
 ## State and artifacts
 
 Derive a slug (lowercase kebab-case, max 40 characters). Store `.pi/plans/<slug>-debug.md` and a JSON sidecar with `phase`, `bug_signature`, `hypotheses`, `root_cause`, `impact`, `red_evidence`, `must_haves`, and `verification`. Resume only after showing state and asking whether to resume or restart.
 
 ## Phase 0 — Reproduce
 
-Set Reproduce to `running`; update the detail with the active reproduction strategy and exact red/green evidence.
+Call `loop_inventory`, triage the bug as quick, standard, or high-risk, and initialize the matching budget. Record the inventory snapshot and initialize the evidence ledger with `loop_evidence` before reproduction. Set Reproduce to `running`; update the detail with the active reproduction strategy and exact red/green evidence.
 
 Extract the bug signature:
 
@@ -41,7 +45,7 @@ Choose the strongest available feedback loop: deterministic test, CLI fixture, H
 
 Set Investigate to `running`; update its detail for root-cause tracing, test audit, similar-case search, and boundary follow-ups.
 
-Run 3–5 read-only subagents in parallel:
+Run the tier-appropriate number of read-only subagents in parallel: quick uses one scout, standard uses 1–2 investigators, and high-risk uses 3–5 specialists. Use discovered role agents only when their capability matches the probe.
 
 1. root-cause trace: origin → propagation → symptom, with `path:line` evidence;
 2. impact scope: callers, entry points, shared state, retries, background jobs, and adjacent paths;
@@ -49,7 +53,7 @@ Run 3–5 read-only subagents in parallel:
 4. similar-case search: sibling implementations, historical fixes, related error signatures, and the same invariant across the codebase;
 5. boundary sweep: concurrency, cancellation, malformed/empty input, permissions, persistence, platform differences, and recovery paths.
 
-Ask for ranked hypotheses and one cheap discriminator per hypothesis. Distinguish facts, inferences, and unknowns. Continue targeted follow-up searches until the confirmed cause explains the observed symptom and every affected entry point is classified. If hypotheses remain, run discriminating probes or focused tests autonomously before asking the user.
+Ask for ranked hypotheses and one cheap discriminator per hypothesis. Distinguish facts, inferences, and unknowns. Continue targeted follow-up searches within the active round/time/tool budget until the confirmed cause explains the observed symptom and every affected entry point is classified. After each round, reconcile the evidence ledger with `loop_evidence` and select the highest-information unresolved probe. If hypotheses remain, run discriminating probes or focused tests autonomously before asking the user.
 
 ### Test audit requirements
 
@@ -61,11 +65,11 @@ After causal and test-audit closure, ask at most four questions: desired user-vi
 
 ## Phase 3 — Research
 
-Use `researcher` only for questions that can change the fix or prevention design. Prefer official documentation and current primary sources. Record source dates, URLs, confidence, and disagreement. Cover the bug class, common false fixes, and the cheapest prevention mechanism. If research cannot answer something, mark it unknown rather than inventing certainty.
+Use discovered `researcher` capability only for questions that can change the fix or prevention design and only while the research budget permits. Prefer official documentation and current primary sources. Record source dates, URLs, confidence, and disagreement. Cover the bug class, common false fixes, and the cheapest prevention mechanism. If research cannot answer something, mark it unknown rather than inventing certainty.
 
 ## Phase 4 — Plan
 
-Emit exactly three conceptual slices and attach the causal graph, impact matrix, similar-case results, and test-audit verdicts:
+Before emitting tasks, reconcile the causal evidence ledger, record budget usage and stopping reason, and list the selected agents/models/tools plus residual unknowns. Emit exactly three conceptual slices and attach the causal graph, impact matrix, similar-case results, and test-audit verdicts:
 
 1. **Regression** — the red reproduction, locked conceptually; it must fail for the reported reason, not an unrelated error.
 2. **Minimal fix** — only the confirmed root-cause path; no opportunistic refactor.

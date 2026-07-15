@@ -66,7 +66,11 @@ Phase 6  Drift + Exec   Drift rules 1-17; ExitPlanMode; RED→impl→GREEN→ver
 
 ## Pi package surface
 
-`package.json` declares a Pi manifest with `skills: ["./skills/pi"]`. Pi therefore loads only the platform-safe skills under `skills/pi/`; it does not load the Claude Code installer payload or the Claude-only reference workflow. The Pi skills use the native `subagent` tool and project-local `.pi/plans/` artifacts. The bundled `loop-progress` extension exposes the `loop_progress` tool and renders a persistent checkpoint widget above the editor; `/loop-progress clear` removes it. Install locally with `pi install /absolute/path/to/claude-loop-plan`, or install the published npm package.
+`package.json` declares a Pi manifest with `skills: ["./skills/pi"]`. Pi therefore loads only the platform-safe skills under `skills/pi/`; it does not load the Claude Code installer payload or the Claude-only reference workflow. The Pi skills use the native `subagent` tool and project-local `.pi/plans/` artifacts. The bundled extensions expose `loop_progress`, `loop_inventory`, and `loop_evidence` tools. They render a persistent checkpoint widget above the editor, snapshot available agents/skills/extensions/packages/tools/models/MCP configuration, and maintain source-backed evidence in the plan state; `/loop-progress clear` removes the widget. Install locally with `pi install /absolute/path/to/claude-loop-plan`, or install the published npm package.
+
+### Adaptive loop efficiency
+
+Both Pi loops use a budgeted funnel rather than fixed maximal fan-out: triage → capability inventory → evidence ledger → highest-information probe → reconciliation → stop or escalate. Quick tasks use one scout, standard tasks use 1–2 investigators, and high-risk tasks may use 3–5. They stop when high-impact unknowns are closed, two rounds add no material evidence, or the budget is exhausted. Remaining uncertainty is reported instead of hidden.
 
 The Claude Code installer and its `~/.claude/` layout remain unchanged for backward compatibility.
 

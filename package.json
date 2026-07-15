@@ -1,6 +1,6 @@
 {
   "name": "@loopskills/claude-skills",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Research-driven planning, debugging, and audit skills for Claude Code and Pi",
   "type": "module",
   "bin": {
@@ -12,6 +12,8 @@
   "files": [
     "dist/src/install.js",
     "extensions/loop-progress.ts",
+    "extensions/loop-inventory.ts",
+    "extensions/loop-evidence.ts",
     "skills/",
     "agents/",
     "bin/",
@@ -29,7 +31,8 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "node --test dist/test/installer.test.js dist/test/pi-package.test.js",
+    "check:extensions": "tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --skipLibCheck extensions/*.ts",
+    "test": "node --test dist/test/installer.test.js dist/test/pi-package.test.js && npm run check:extensions",
     "test:e2e": "bash test/e2e-published.sh"
   },
   "repository": {
@@ -52,11 +55,14 @@
       "./skills/pi"
     ],
     "extensions": [
-      "./extensions/loop-progress.ts"
+      "./extensions/loop-progress.ts",
+      "./extensions/loop-inventory.ts",
+      "./extensions/loop-evidence.ts"
     ]
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
     "typebox": "*"
   },
   "license": "MIT",
