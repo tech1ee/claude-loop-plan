@@ -9,7 +9,7 @@
 **Model:** sonnet **When:** before merge on Vue component / composable changes
 **Returns:** reactivity pitfall findings with severity
 **Related:** delegates SSR/CSR issues to `nuxt-ssr-hydration-auditor`
-**Install:** `npx @loopskills/loop-skills --agents vue-reactivity-pitfalls-auditor`
+**Install:** `npx loop-skills --agents vue-reactivity-pitfalls-auditor`
 
 ---
 
@@ -18,4 +18,4 @@
 **Model:** sonnet **When:** before merge on Nuxt page/component/composable changes
 **Returns:** SSR/hydration findings with severity
 **Related:** delegates Vue reactivity patterns to `vue-reactivity-pitfalls-auditor`
-**Install:** `npx @loopskills/loop-skills --agents nuxt-ssr-hydration-auditor`
+**Install:** `npx loop-skills --agents nuxt-ssr-hydration-auditor`

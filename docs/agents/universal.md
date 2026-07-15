@@ -9,7 +9,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Model:** opus **When:** after every implementation step, before code-quality-reviewer
 **Returns:** binary verdict with precise reasons
 **Related:** run before `code-quality-reviewer`
-**Install:** `npx @loopskills/loop-skills --agents spec-reviewer`
+**Install:** `npx loop-skills --agents spec-reviewer`
 
 ---
 
@@ -18,7 +18,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Model:** opus **When:** after spec-reviewer passes
 **Returns:** structured findings per dimension
 **Related:** run after `spec-reviewer`
-**Install:** `npx @loopskills/loop-skills --agents code-quality-reviewer`
+**Install:** `npx loop-skills --agents code-quality-reviewer`
 
 ---
 
@@ -26,7 +26,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Library docs, API references, and best-practice lookup using context7 MCP + web search with mandatory date constraints.
 **Model:** sonnet **When:** Phase 3 internet research during planning
 **Returns:** concise technical summary with source dates
-**Install:** `npx @loopskills/loop-skills --agents research-agent`
+**Install:** `npx loop-skills --agents research-agent`
 
 ---
 
@@ -34,7 +34,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Detects and runs the project's test suite (gradle / xcodebuild / npm / pytest / swift test). Reports pass/fail + failing test names.
 **Model:** haiku **When:** after implementation, between implementer and reviewers
 **Returns:** pass/fail verdict + failing test list
-**Install:** `npx @loopskills/loop-skills --agents test-runner`
+**Install:** `npx loop-skills --agents test-runner`
 
 ---
 
@@ -42,7 +42,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Cross-model code review via OpenAI Codex. Advisory — never blocking. Requires `OPENAI_API_KEY`.
 **Model:** opus **When:** pre-ship gate, high-stakes diffs
 **Returns:** advisory findings with severity + consensus metadata
-**Install:** `npx @loopskills/loop-skills --agents second-opinion`
+**Install:** `npx loop-skills --agents second-opinion`
 
 ---
 
@@ -50,7 +50,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Auth bypass, injection, exposed secrets, insecure data handling. Reports findings with >80% confidence only.
 **Model:** opus **When:** after any auth/payment/secret/data-handling code change
 **Returns:** high-confidence security findings with concrete impact
-**Install:** `npx @loopskills/loop-skills --agents security-reviewer`
+**Install:** `npx loop-skills --agents security-reviewer`
 
 ---
 
@@ -59,7 +59,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Model:** opus **When:** after non-trivial class additions, before merge
 **Returns:** quantitative metrics per class, BLOCK/FLAG/PASS verdict
 **Related:** `dry-duplication-auditor`, `complexity-long-method-auditor`
-**Install:** `npx @loopskills/loop-skills --agents srp-godclass-auditor`
+**Install:** `npx loop-skills --agents srp-godclass-auditor`
 
 ---
 
@@ -67,7 +67,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Finds code duplication with Rule-of-Three gate (duplicate-of-2: leave; duplicate-of-3: extract).
 **Model:** opus **When:** after multi-file changes, before merge
 **Returns:** duplicate blocks with file:line, Rule-of-Three verdict
-**Install:** `npx @loopskills/loop-skills --agents dry-duplication-auditor`
+**Install:** `npx loop-skills --agents dry-duplication-auditor`
 
 ---
 
@@ -75,7 +75,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Cyclomatic + cognitive complexity, LOC/method, nesting depth, parameter count.
 **Model:** opus **When:** after method changes, before merge
 **Returns:** complexity metrics per method, threshold violations
-**Install:** `npx @loopskills/loop-skills --agents complexity-long-method-auditor`
+**Install:** `npx loop-skills --agents complexity-long-method-auditor`
 
 ---
 
@@ -83,7 +83,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Dependency inversion + acyclic dependencies — reverse imports, import cycles, layer violations.
 **Model:** opus **When:** after module/package/layer changes
 **Returns:** cycle report, layer violation list
-**Install:** `npx @loopskills/loop-skills --agents dip-dependency-direction-auditor`
+**Install:** `npx loop-skills --agents dip-dependency-direction-auditor`
 
 ---
 
@@ -91,7 +91,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Naming smells — generic suffixes (Manager/Helper/Util), id-length, Hungarian, acronym capitalization, boolean prefixes.
 **Model:** opus **When:** after type/function/variable additions
 **Returns:** naming violations with suggested alternatives
-**Install:** `npx @loopskills/loop-skills --agents naming-conventions-auditor`
+**Install:** `npx loop-skills --agents naming-conventions-auditor`
 
 ---
 
@@ -99,7 +99,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Comment hygiene — WHAT-vs-WHY violations, expired TODO/FIXME, outdated doc-comments, undocumented public API.
 **Model:** sonnet **When:** after code changes
 **Returns:** comment violations with file:line
-**Install:** `npx @loopskills/loop-skills --agents comment-quality-auditor`
+**Install:** `npx loop-skills --agents comment-quality-auditor`
 
 ---
 
@@ -107,7 +107,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Speculative-generality smells — one-impl interfaces, single-product factories, dead extension points.
 **Model:** sonnet **When:** after introducing interfaces/factories/extension points
 **Returns:** premature abstraction findings with evidence
-**Install:** `npx @loopskills/loop-skills --agents yagni-premature-abstraction-auditor`
+**Install:** `npx loop-skills --agents yagni-premature-abstraction-auditor`
 
 ---
 
@@ -115,7 +115,7 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** Pre-refactor characterization-test coverage audit. Must run BEFORE refactoring high-risk code.
 **Model:** opus **When:** BEFORE any HIGH-risk refactor
 **Returns:** line/branch coverage of touched lines, mutation score baseline
-**Install:** `npx @loopskills/loop-skills --agents char-test-coverage-auditor`
+**Install:** `npx loop-skills --agents char-test-coverage-auditor`
 
 ---
 
@@ -123,4 +123,4 @@ These 15 agents work with any codebase regardless of language or framework. Inst
 **Role:** MADR 4.0.0 schema completeness — required sections, status enum, stale-proposed >90d, dangling cross-refs.
 **Model:** opus **When:** after ADR additions / status changes
 **Returns:** per-ADR findings with MADR 4.0.0 compliance verdict
-**Install:** `npx @loopskills/loop-skills --agents adr-completeness-auditor`
+**Install:** `npx loop-skills --agents adr-completeness-auditor`

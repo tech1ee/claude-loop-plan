@@ -7,7 +7,7 @@ The `loop-skills` command manages the Claude Code installation. The same npm pac
 Install globally or per project with Pi:
 
 ```bash
-pi install npm:@loopskills/loop-skills
+pi install npm:loop-skills
 # local checkout:
 pi install /absolute/path/to/loop-skills
 ```
@@ -25,7 +25,7 @@ The Claude Code installer below remains available for `~/.claude/` users.
 ### Default — run the installer
 
 ```bash
-npx @loopskills/loop-skills
+npx loop-skills
 # or
 loop-skills
 ```
@@ -40,7 +40,7 @@ Launches the interactive installer. Prompts for which skills and agents to insta
 loop-skills update
 ```
 
-Updates to the latest version by running `npm install -g @loopskills/loop-skills@latest`, then re-runs the installer with `--force` to overwrite existing files.
+Updates to the latest version by running `npm install -g loop-skills@latest`, then re-runs the installer with `--force` to overwrite existing files.
 
 ---
 
@@ -68,7 +68,7 @@ Installed agents:
   android-kmp-explorer
   swiftui-explorer
 
-Package: @loopskills/loop-skills v0.1.0
+Package: loop-skills v0.1.0
 ```
 
 ---

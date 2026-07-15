@@ -13,7 +13,7 @@ test('package declares Pi skills', async () => {
     keywords?: string[];
     pi?: { skills?: string[] };
   };
-  assert.equal(pkg.name, '@loopskills/loop-skills');
+  assert.equal(pkg.name, 'loop-skills');
   assert.equal(pkg.bin?.['loop-skills'], './dist/src/install.js');
   assert.equal(pkg.bin?.['claude-skills'], './dist/src/install.js');
   assert.ok(pkg.keywords?.includes('pi-package'));

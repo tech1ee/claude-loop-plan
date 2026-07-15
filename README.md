@@ -5,7 +5,7 @@
 # 🔄 Loop Skills
 
 [![CI](https://github.com/tech1ee/loop-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/tech1ee/loop-skills/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@loopskills/loop-skills?color=brightgreen&label=npm)](https://www.npmjs.com/package/@loopskills/loop-skills)
+[![npm](https://img.shields.io/npm/v/loop-skills?color=brightgreen&label=npm)](https://www.npmjs.com/package/loop-skills)
 [![Node.js ≥18](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
@@ -18,7 +18,7 @@
 1. Run the installer:
 
 ```bash
-npx @loopskills/loop-skills
+npx loop-skills
 ```
 
 2. Pick which skills and supporting agents to install. Everything goes into `~/.claude/` — nothing else is touched.
@@ -33,10 +33,10 @@ This package is also a native Pi package. From this repository (or after publish
 
 ```bash
 pi install /Users/you/path/to/loop-skills
-# or: pi install npm:@loopskills/loop-skills
+# or: pi install npm:loop-skills
 ```
 
-Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled progress extension renders a checkpoint list above the editor with live step state, current-step progress, and short status descriptions through the `loop_progress` tool. The installer also supports Claude Code via `npx @loopskills/loop-skills`; the legacy `@loopskills/claude-skills` package remains available for existing users.
+Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled progress extension renders a checkpoint list above the editor with live step state, current-step progress, and short status descriptions through the `loop_progress` tool. The installer also supports Claude Code via `npx loop-skills`; the legacy `@loopskills/claude-skills` package remains available for existing users.
 
 ---
 
@@ -239,7 +239,7 @@ The installer optionally adds 42 agents across 8 groups. The skills use these at
 Every release ships `checksums.txt` with SHA-256 digests of all installed files:
 
 ```bash
-cd $(npm root -g)/@loopskills/loop-skills
+cd $(npm root -g)/loop-skills
 sha256sum -c checksums.txt
 ```
 

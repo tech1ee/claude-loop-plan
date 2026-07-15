@@ -1,6 +1,6 @@
 {
-  "name": "@loopskills/loop-skills",
-  "version": "0.5.0",
+  "name": "loop-skills",
+  "version": "0.5.1",
   "description": "Research-driven planning, debugging, and audit skills for Pi, Claude Code, and other agents",
   "type": "module",
   "bin": {

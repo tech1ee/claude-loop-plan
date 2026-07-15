@@ -16,7 +16,7 @@ const CLAUDE_DIR = join(homedir(), '.claude');
 const VERSION = JSON.parse(
   await readFile(join(PKG_ROOT, 'package.json'), 'utf8')
 ).version as string;
-const PKG_NAME = '@loopskills/loop-skills';
+const PKG_NAME = 'loop-skills';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -385,7 +385,7 @@ async function updateCommand(): Promise<void> {
     p.outro('Update complete. Re-run loop-skills to install updated skill files.');
   } catch {
     spinner.stop('Could not reach registry.');
-    p.outro('Try: npm install -g @loopskills/loop-skills@latest');
+    p.outro('Try: npm install -g loop-skills@latest');
   }
 }
 

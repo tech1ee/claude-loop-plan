@@ -9,7 +9,7 @@
 **Model:** sonnet **When:** before merge on TypeScript changes
 **Returns:** type safety findings per file + tsconfig.json flag coverage
 **Related:** delegates async anti-patterns to `nodejs-async-safety-auditor`
-**Install:** `npx @loopskills/loop-skills --agents typescript-strict-mode-auditor`
+**Install:** `npx loop-skills --agents typescript-strict-mode-auditor`
 
 ---
 
@@ -18,4 +18,4 @@
 **Model:** sonnet **When:** before merge on Node.js server-side changes
 **Returns:** async safety findings with severity
 **Related:** delegates TypeScript type safety to `typescript-strict-mode-auditor`
-**Install:** `npx @loopskills/loop-skills --agents nodejs-async-safety-auditor`
+**Install:** `npx loop-skills --agents nodejs-async-safety-auditor`

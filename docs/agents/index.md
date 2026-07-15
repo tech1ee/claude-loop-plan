@@ -59,7 +59,7 @@
 ## Install a specific agent
 
 ```bash
-npx @loopskills/loop-skills --agents <agent-name>
+npx loop-skills --agents <agent-name>
 # or comma-separated:
-npx @loopskills/loop-skills --agents react-hooks-misuse-auditor,nextjs-rsc-boundary-auditor
+npx loop-skills --agents react-hooks-misuse-auditor,nextjs-rsc-boundary-auditor
 ```

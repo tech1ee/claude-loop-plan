@@ -1,9 +1,15 @@
 # Changelog
 
+## v0.5.1 — 2026-07-15
+
+**Public package correction:**
+- Published under the unscoped public npm name `loop-skills` because the `@loopskills` scope did not permit creating the renamed package with the release token.
+- Updated installer updates, docs, badges, E2E tests, and metadata to use `loop-skills`.
+
 ## v0.5.0 — 2026-07-15
 
 **Brand and package rename:**
-- Renamed the primary package to `@loopskills/loop-skills`.
+- Renamed the primary package to `loop-skills`.
 - Renamed the primary CLI to `loop-skills`; `claude-skills` remains an installation alias for compatibility.
 - Renamed the GitHub repository to `tech1ee/loop-skills`.
 - Updated public documentation, agent install examples, badges, repository links, release tests, and metadata.

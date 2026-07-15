@@ -83,4 +83,4 @@ The installer performs a **non-blocking background check** on every run (unless 
 3. If a newer version exists, prints a one-line notice after the install completes.
 4. The fetch is fire-and-forget — it never blocks or fails the install.
 
-To explicitly update: `loop-skills update` runs `npm install -g @loopskills/loop-skills@latest`.
+To explicitly update: `loop-skills update` runs `npm install -g loop-skills@latest`.
