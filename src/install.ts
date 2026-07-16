@@ -1,18 +1,22 @@
 #!/usr/bin/env node
 import * as p from '@clack/prompts';
 import { groupMultiselect } from '@clack/prompts';
-import { cp, chmod, mkdir, readFile, writeFile, access, readdir } from 'node:fs/promises';
+import { cp, chmod, mkdir, readFile, writeFile, access, readdir, rename, rm } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // In dist/src/install.js; project root is two levels up
 const PKG_ROOT = join(__dirname, '../..');
 const CLAUDE_DIR = join(homedir(), '.claude');
+const CODEX_PLUGIN_NAME = 'loop-skills';
+const CODEX_PLUGIN_SOURCE = join(PKG_ROOT, 'plugins', CODEX_PLUGIN_NAME);
+const CODEX_PLUGIN_DIR = join(homedir(), 'plugins', CODEX_PLUGIN_NAME);
+const CODEX_MARKETPLACE_PATH = join(homedir(), '.agents', 'plugins', 'marketplace.json');
 const VERSION = JSON.parse(
   await readFile(join(PKG_ROOT, 'package.json'), 'utf8')
 ).version as string;
@@ -65,6 +69,12 @@ async function checkUpdate(current: string): Promise<void> {
 const SKILLS = [
   { value: 'loop-plan', label: 'loop-plan', hint: 'iterative research-driven planner (7-phase)' },
   { value: 'loop-debug', label: 'loop-debug', hint: '7-phase research-driven debugger (requires loop-plan)', requires: 'loop-plan' },
+] as const;
+
+const CODEX_SKILLS = [
+  { value: 'loop-plan', label: 'loop-plan', hint: 'research, plan, implement, and verify non-trivial changes' },
+  { value: 'loop-debug', label: 'loop-debug', hint: 'reproduce, diagnose, fix, and prevent bugs (requires loop-plan)' },
+  { value: 'loop-audit', label: 'loop-audit', hint: 'audit skills, plugins, hooks, MCP, and agent workflows' },
 ] as const;
 
 const AGENT_GROUPS = {
@@ -144,6 +154,7 @@ const AGENT_GROUPS_DISPLAY = Object.fromEntries(
 ) as Record<AgentGroupName, Array<{ value: string; label: string; hint: string }>>;
 
 type SkillName = (typeof SKILLS)[number]['value'];
+type CodexSkillName = (typeof CODEX_SKILLS)[number]['value'];
 
 interface InstallOptions {
   dryRun: boolean;
@@ -152,6 +163,149 @@ interface InstallOptions {
   agents?: AgentName[];
   noAgents?: boolean;
   noBin?: boolean;
+}
+
+interface MarketplaceEntry {
+  name: string;
+  source: { source: 'local'; path: string };
+  policy: { installation: 'AVAILABLE'; authentication: 'ON_INSTALL' };
+  category: string;
+}
+
+interface MarketplaceFile {
+  name: string;
+  interface?: { displayName?: string; [key: string]: unknown };
+  plugins: MarketplaceEntry[];
+  [key: string]: unknown;
+}
+
+async function installCodexPlugin(opts: {
+  dryRun: boolean;
+  force: boolean;
+  noEnable: boolean;
+  skills?: CodexSkillName[];
+}): Promise<void> {
+  p.intro('Loop Skills — Codex Plugin Installer');
+
+  let selectedSkills = opts.skills ?? [];
+  if (selectedSkills.length === 0) {
+    if (process.stdin.isTTY) {
+      const answer = await p.multiselect({
+        message: 'Which Codex workflows do you want to install?',
+        options: CODEX_SKILLS.map(skill => ({
+          value: skill.value,
+          label: skill.label,
+          hint: skill.hint,
+        })),
+        initialValues: CODEX_SKILLS.map(skill => skill.value),
+        required: true,
+      });
+      if (p.isCancel(answer)) { p.cancel('Cancelled.'); return; }
+      selectedSkills = answer as CodexSkillName[];
+    } else {
+      selectedSkills = CODEX_SKILLS.map(skill => skill.value);
+    }
+  }
+
+  if (selectedSkills.includes('loop-debug') && !selectedSkills.includes('loop-plan')) {
+    p.note('loop-debug uses loop-plan references. loop-plan will be added automatically.');
+    selectedSkills = ['loop-plan', ...selectedSkills];
+  }
+
+  let marketplace: MarketplaceFile = {
+    name: 'personal',
+    interface: { displayName: 'Personal' },
+    plugins: [],
+  };
+  if (await exists(CODEX_MARKETPLACE_PATH)) {
+    try {
+      const parsed = JSON.parse(await readFile(CODEX_MARKETPLACE_PATH, 'utf8')) as Partial<MarketplaceFile>;
+      if (!parsed.name || !Array.isArray(parsed.plugins)) {
+        throw new Error('expected top-level name and plugins[]');
+      }
+      marketplace = parsed as MarketplaceFile;
+    } catch (err) {
+      console.error(`Invalid personal marketplace at ${CODEX_MARKETPLACE_PATH}`);
+      console.error(`Reason: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  }
+
+  const existingIndex = marketplace.plugins.findIndex(entry => entry.name === CODEX_PLUGIN_NAME);
+  const conflicts = [
+    await exists(CODEX_PLUGIN_DIR) ? CODEX_PLUGIN_DIR : null,
+    existingIndex >= 0 ? `${CODEX_PLUGIN_NAME} entry in ${CODEX_MARKETPLACE_PATH}` : null,
+  ].filter((value): value is string => value !== null);
+
+  if (conflicts.length > 0 && !opts.force && !opts.dryRun) {
+    const proceed = await p.confirm({
+      message: `Codex installation already exists (${conflicts.join(', ')}). Replace it?`,
+    });
+    if (p.isCancel(proceed) || !proceed) { p.cancel('Cancelled.'); return; }
+  }
+
+  const entry: MarketplaceEntry = {
+    name: CODEX_PLUGIN_NAME,
+    source: { source: 'local', path: `./plugins/${CODEX_PLUGIN_NAME}` },
+    policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' },
+    category: 'Developer Tools',
+  };
+
+  if (opts.dryRun) {
+    p.note([
+      `  ${CODEX_PLUGIN_SOURCE} → ${CODEX_PLUGIN_DIR}`,
+      `  workflows: ${selectedSkills.join(', ')}`,
+      `  add ${CODEX_PLUGIN_NAME} to ${CODEX_MARKETPLACE_PATH}`,
+      opts.noEnable ? '  leave plugin staged but disabled' : `  codex plugin add ${CODEX_PLUGIN_NAME}@${marketplace.name}`,
+    ].join('\n'), 'Dry-run — nothing written');
+    p.outro('Done (dry-run).');
+    return;
+  }
+
+  if (!await exists(CODEX_PLUGIN_SOURCE)) {
+    console.error(`Codex plugin payload is missing: ${CODEX_PLUGIN_SOURCE}`);
+    process.exit(1);
+  }
+
+  const spinner = p.spinner();
+  spinner.start('Installing Codex plugin…');
+  await mkdir(dirname(CODEX_PLUGIN_DIR), { recursive: true });
+  const stagingDir = `${CODEX_PLUGIN_DIR}.tmp-${process.pid}-${Date.now()}`;
+  try {
+    await cp(CODEX_PLUGIN_SOURCE, stagingDir, { recursive: true, force: true });
+    for (const skill of CODEX_SKILLS) {
+      if (!selectedSkills.includes(skill.value)) {
+        await rm(join(stagingDir, 'skills', skill.value), { recursive: true, force: true });
+      }
+    }
+    await rm(CODEX_PLUGIN_DIR, { recursive: true, force: true });
+    await rename(stagingDir, CODEX_PLUGIN_DIR);
+  } catch (err) {
+    await rm(stagingDir, { recursive: true, force: true });
+    spinner.stop('Could not install the Codex plugin payload.');
+    throw err;
+  }
+
+  if (existingIndex >= 0) marketplace.plugins[existingIndex] = entry;
+  else marketplace.plugins.push(entry);
+  marketplace.interface ??= { displayName: 'Personal' };
+  marketplace.interface.displayName ??= 'Personal';
+
+  await mkdir(dirname(CODEX_MARKETPLACE_PATH), { recursive: true });
+  await writeFile(CODEX_MARKETPLACE_PATH, `${JSON.stringify(marketplace, null, 2)}\n`);
+  spinner.stop('Plugin files and personal marketplace entry installed.');
+
+  if (opts.noEnable) {
+    p.outro(`Plugin staged. Enable it with: codex plugin add ${CODEX_PLUGIN_NAME}@${marketplace.name}`);
+    return;
+  }
+
+  try {
+    execFileSync('codex', ['plugin', 'add', `${CODEX_PLUGIN_NAME}@${marketplace.name}`], { stdio: 'inherit' });
+    p.outro(`Loop Skills is enabled with ${selectedSkills.join(', ')}. Start a new Codex thread to use the installed workflows.`);
+  } catch {
+    p.outro(`Plugin files are installed, but automatic enablement failed. Run: codex plugin add ${CODEX_PLUGIN_NAME}@${marketplace.name}`);
+  }
 }
 
 async function install(opts: InstallOptions): Promise<void> {
@@ -421,7 +575,6 @@ async function verifyCommand(): Promise<void> {
 }
 
 async function uninstallCommand(): Promise<void> {
-  const { rm } = await import('node:fs/promises');
   const receiptPath = join(CLAUDE_DIR, 'skills', '.install-receipt.json');
   let skills: string[] = [];
   try {
@@ -443,26 +596,30 @@ async function uninstallCommand(): Promise<void> {
 // ── CLI entry ─────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-const cmdCandidates = ['update', 'list', 'verify', 'uninstall', 'init'];
+const cmdCandidates = ['update', 'list', 'verify', 'uninstall', 'init', 'codex', 'install-codex'];
 const cmd = cmdCandidates.includes(args[0] ?? '') ? args[0] : undefined;
 const dryRun = args.includes('--dry-run');
 const force = args.includes('--force');
 const noAgents = args.includes('--no-agents');
 const noBin = args.includes('--no-bin');
+const noEnable = args.includes('--no-enable');
 
-// Parse --skills loop-plan,loop-debug or --skills loop-plan --skills loop-debug
-const ALL_SKILL_NAMES = new Set<string>(SKILLS.map(s => s.value));
-const skillArgs: SkillName[] = [];
+// Parse --skills loop-plan,loop-debug or --skills loop-plan --skills loop-debug.
+// The Codex plugin supports loop-audit in addition to the Claude Code skills.
+const allowedSkillNames = new Set<string>(
+  (cmd === 'codex' || cmd === 'install-codex' ? CODEX_SKILLS : SKILLS).map(skill => skill.value),
+);
+const rawSkillArgs: string[] = [];
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--skills' && args[i + 1]) {
     const names = args[i + 1].split(',').map(s => s.trim()).filter(Boolean);
-    const invalid = names.filter(n => !ALL_SKILL_NAMES.has(n));
+    const invalid = names.filter(n => !allowedSkillNames.has(n));
     if (invalid.length > 0) {
       console.error(`Unknown skill(s): ${invalid.join(', ')}`);
-      console.error(`Available: ${[...ALL_SKILL_NAMES].join(', ')}`);
+      console.error(`Available: ${[...allowedSkillNames].join(', ')}`);
       process.exit(1);
     }
-    skillArgs.push(...(names as SkillName[]));
+    rawSkillArgs.push(...names);
     i++;
   }
 }
@@ -492,13 +649,21 @@ else if (cmd === 'list') { await listCommand(); }
 else if (cmd === 'verify') { await verifyCommand(); }
 else if (cmd === 'uninstall') { await uninstallCommand(); }
 else if (cmd === 'init') { await initCommand(); }
+else if (cmd === 'codex' || cmd === 'install-codex') {
+  await installCodexPlugin({
+    dryRun,
+    force,
+    noEnable,
+    skills: rawSkillArgs.length > 0 ? rawSkillArgs as CodexSkillName[] : undefined,
+  });
+}
 else {
   await install({
     dryRun,
     force,
     noAgents,
     noBin,
-    skills: skillArgs.length > 0 ? skillArgs : undefined,
+    skills: rawSkillArgs.length > 0 ? rawSkillArgs as SkillName[] : undefined,
     agents: agentArgs.length > 0 ? agentArgs : undefined,
   });
 }

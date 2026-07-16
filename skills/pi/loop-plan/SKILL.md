@@ -25,6 +25,10 @@ Use the `loop_progress` tool throughout the loop. Initialize it before Phase 0 w
 
 Follow [`../references/adaptive-loop.md`](../references/adaptive-loop.md). At Seed, call `loop_inventory` and record the snapshot timestamp, active model/provider, available capabilities, and selected tier. Maintain an evidence ledger for claims and unresolved unknowns. Use the smallest budget that can close high-impact uncertainty; do not fan out by default. After each exploration round, reconcile duplicate evidence and choose the next highest-information probe. Stop on closure, diminishing returns, or budget exhaustion with residual risk documented.
 
+## Durable context and child contract
+
+Follow [`../references/context-management.md`](../references/context-management.md). Call `loop_context` with `snapshot` before fan-out and `checkpoint` before phase transitions. At each phase boundary, register the next bounded routine node with `register_next` (token, action kind, approval requirement, retry budget, and completion predicate), then call `complete_next` before advancing to another token. Routine/read-only nodes may advance after their gate; implementation, product-decision, and destructive nodes always require explicit approval. After implementation approval, do not wait for a user nudge between registered routine DAG nodes: the runtime may trigger one follow-up at a safe lifecycle boundary. Keep the parent as controller and synthesizer; independent children use bounded fresh contexts and return one validated `pi.loop.handoff.v1`. Use a fork only for inherited-decision oracle review and RPC only for escalation. Default to two active workers, three only for explicitly high-risk work, and queue excess work. Stop/compact at 60/70/85% thresholds; unknown usage, failed compaction, retry exhaustion, and destructive work pause autonomy; use `autonomy_status` for the reason.
+
 ## State and artifacts
 
 Derive a slug (lowercase kebab-case, max 40 characters). Store:

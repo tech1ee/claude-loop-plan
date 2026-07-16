@@ -21,11 +21,23 @@
 npx loop-skills
 ```
 
-2. Pick which skills and supporting agents to install. Everything goes into `~/.claude/` — nothing else is touched.
+2. Pick which skills and supporting agents to install. This default flow installs the Claude Code surface into `~/.claude/`.
 
 3. Open Pi, Claude Code, or another supported agent and type `/loop-plan` or `/loop-debug`.
 
 That's it. You're ready to go.
+
+### Codex support
+
+Install the Codex-native plugin from the same package:
+
+```bash
+npx loop-skills codex
+```
+
+This installs a personal `loop-skills` plugin, registers it in the personal Codex marketplace, and enables it with the Codex CLI. Interactive installs let you select `loop-plan`, `loop-debug`, and `loop-audit`; all three are selected by default. For automation, pass `--skills loop-plan,loop-debug,loop-audit`. Start a new Codex thread, then invoke an installed skill explicitly or describe a matching task and let Codex select it.
+
+The Codex workflows are native adaptations, not path substitutions. They use Codex plans, bounded parallel subagents, role-focused workers and reviewers, current web research, installed skills and MCP connectors, sandboxed commands, scoped approvals, and outcome-level verification. Use `npx loop-skills codex --dry-run` to preview the installation or `--no-enable` to stage the plugin without enabling it.
 
 ### Pi support
 
@@ -36,7 +48,7 @@ pi install /Users/you/path/to/loop-skills
 # or: pi install npm:loop-skills
 ```
 
-Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled extensions render a checkpoint list above the editor; `loop_progress` drives the loop checklist. Model/subscription limits visualization is installed separately in the local Pi setup. The installer also supports Claude Code via `npx loop-skills`; the legacy `@loopskills/claude-skills` package remains available for existing users.
+Pi loads the platform-safe skills `loop-plan`, `loop-debug`, and `loop-audit` from `skills/pi/`. They use Pi's `subagent` orchestration, work with OpenAI models selected by Pi, store plans under `.pi/plans/`, and gate all writes on explicit approval. The bundled extensions render a checkpoint list above the editor; `loop_progress` drives the loop checklist. Model/subscription limits visualization is installed separately in the local Pi setup. The installer also supports Claude Code via `npx loop-skills` and Codex via `npx loop-skills codex`; the legacy `@loopskills/claude-skills` package remains available for existing users.
 
 ---
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# loop-skills v0.5.4 — full isolated E2E test suite
+# loop-skills v0.6.0 — full isolated E2E test suite
 # Tests the PUBLISHED package via "npm install --prefix" into a temp dir.
 # Never touches the real ~/.claude.
 set -uo pipefail
 
-PKG="loop-skills@0.5.4"
+VERSION="0.6.0"
+PKG="loop-skills@$VERSION"
 PASS=0; FAIL=0; SKIP=0
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 
@@ -77,7 +78,7 @@ PKG_DIR="$INSTALL_ENV/node_modules/loop-skills"
 [ -d "$PKG_DIR" ] && pass "package installed to node_modules/" || { fail "package dir missing"; exit 1; }
 
 PKG_VER="$(node -e "console.log(require('$PKG_DIR/package.json').version)")"
-assert_eq "$PKG_VER" "0.5.4" "installed package.json version is 0.5.4"
+assert_eq "$PKG_VER" "$VERSION" "installed package.json version is $VERSION"
 
 # ─────────────────────────────────────────────────────────────────────────────
 section "1. Security: no personal paths in package contents"
@@ -254,7 +255,7 @@ assert_output_contains "$OUT11_EMPTY" "No install receipt|receipt|install" "list
 
 run_cli "$H11" --skills loop-plan --no-agents --no-bin --force > /dev/null 2>&1
 OUT11_FULL="$(run_cli "$H11" list)"
-assert_output_contains "$OUT11_FULL" "0.3.0" "list: shows version 0.3.0"
+assert_output_contains "$OUT11_FULL" "$VERSION" "list: shows version $VERSION"
 assert_output_contains "$OUT11_FULL" "loop-plan" "list: shows loop-plan in skills"
 
 # ─────────────────────────────────────────────────────────────────────────────

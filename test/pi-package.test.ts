@@ -28,14 +28,17 @@ test('Pi manifest exposes the progress extension', async () => {
     './extensions/loop-progress.ts',
     './extensions/loop-inventory.ts',
     './extensions/loop-evidence.ts',
+    './extensions/loop-context.ts',
   ]);
   const progress = await readFile(join(root, 'extensions', 'loop-progress.ts'), 'utf8');
   const inventory = await readFile(join(root, 'extensions', 'loop-inventory.ts'), 'utf8');
   const evidence = await readFile(join(root, 'extensions', 'loop-evidence.ts'), 'utf8');
+  const context = await readFile(join(root, 'extensions', 'loop-context.ts'), 'utf8');
   assert.match(progress, /registerTool\(\{\s*name: "loop_progress"/s);
   assert.match(progress, /setWidget\("loop-progress"/);
   assert.match(inventory, /name: "loop_inventory"/);
   assert.match(evidence, /name: "loop_evidence"/);
+  assert.match(context, /name: "loop_context"/);
 });
 
 test('Pi skills are discoverable and do not require Claude-only tools', async () => {

@@ -1,0 +1,40 @@
+{
+  "name": "loop-skills",
+  "version": "0.6.0",
+  "description": "Research-driven planning, debugging, and audit loops adapted for Codex.",
+  "author": {
+    "name": "Arman Aralbayev",
+    "email": "t3ch1ee@gmail.com",
+    "url": "https://github.com/tech1ee"
+  },
+  "homepage": "https://github.com/tech1ee/loop-skills",
+  "repository": "https://github.com/tech1ee/loop-skills",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "planning",
+    "debugging",
+    "tdd",
+    "multi-agent"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Loop Skills",
+    "shortDescription": "Research, plan, debug, and verify with Codex",
+    "longDescription": "Codex-native engineering loops that combine repository evidence, current research, bounded subagents, human gates, TDD, and adversarial verification.",
+    "developerName": "Arman Aralbayev",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write",
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/tech1ee/loop-skills",
+    "defaultPrompt": [
+      "Use loop-plan to research and plan this feature.",
+      "Use loop-debug to reproduce and fix this bug.",
+      "Use loop-audit to inspect this agent workflow."
+    ],
+    "brandColor": "#10A37F"
+  }
+}

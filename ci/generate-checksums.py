@@ -12,7 +12,7 @@ import hashlib
 import sys
 from pathlib import Path
 
-INSTALLABLE_DIRS = ["skills", "agents", "bin", "commands", "extensions"]
+INSTALLABLE_DIRS = ["skills", "agents", "bin", "commands", "extensions", "plugins"]
 
 
 def sha256(path: Path) -> str:

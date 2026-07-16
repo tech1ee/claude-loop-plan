@@ -4,13 +4,13 @@ This protocol keeps loop-plan and loop-debug useful without turning every task i
 
 ## Strategy
 
-Use a funnel:
+Use the durable context contract in [`context-management.md`](./context-management.md) for every checkpoint, fan-out decision, and child merge. Use a funnel:
 
 1. **Triage** — classify task as `quick`, `standard`, or `high-risk` using impact, uncertainty, and reversibility.
 2. **Inventory** — inspect the runtime's agents, skills, extensions, packages, active tools, model, and MCP configuration. Record names and paths only; never dump prompt bodies or secrets.
 3. **Evidence ledger** — track each unknown or claim with `id`, `claim`, `source`, `confidence`, `impact`, `status`, and `next_probe`.
 4. **Probe selection** — choose the highest-impact unresolved item with the best expected information gain per cost.
-5. **Adaptive fanout** — start with one scout for quick work, 1–2 specialists for standard work, and 3–5 only for high-risk or high-uncertainty work.
+5. **Adaptive fanout** — start with one scout for quick work, 1–2 specialists for standard work, and never exceed two active workers by default (three only when explicitly high-risk).
 6. **Reconcile** — merge evidence, remove duplicate claims, downgrade unsupported claims, and re-score unresolved items.
 7. **Stop or escalate** — stop when high-impact unknowns are closed, two rounds add no material evidence, or the budget is exhausted. Escalate only when residual risk justifies more cost.
 
@@ -26,7 +26,7 @@ These are ceilings, not targets:
 | standard | 2 | 2 | 12 | 8 min | 3 |
 | high-risk | 4 | 4 | 20 | 20 min | 8 |
 
-Use the smallest tier that can prove the goal. A budget may be increased only with a stated risk-based reason. Progress updates happen at phase or round boundaries, not after every tool call.
+Use the smallest tier that can prove the goal. A budget may be increased only with a stated risk-based reason. Persist `loop_context` usage/checkpoint state before fan-out and phase transitions. Register and complete a structured next-step token at each boundary; only an approved, non-destructive intent may advance automatically. Every child returns a bounded `pi.loop.handoff.v1`; the parent validates identity, attempt, schema, and evidence before merging. Progress updates happen at phase or round boundaries, not after every tool call. At 60%, finish the unit; at 70%, persist and request compaction at `agent_settled`; at 85% or unknown usage, stop fan-out and use serialized handoff/fresh context.
 
 ## Capability routing
 
@@ -35,7 +35,7 @@ Use the smallest tier that can prove the goal. A budget may be increased only wi
 - `researcher` — external, current, primary-source research only when it can change the design.
 - `reviewer` — adversarial validation of a plan or diff; read-only unless explicitly assigned a writer role.
 - `worker` — sole writer after explicit approval.
-- `oracle` — decision consistency / drift review when the plan has unresolved trade-offs.
+- `oracle` — decision consistency / drift review when the plan has unresolved trade-offs. RPC/process isolation is escalation-only.
 - User/project agents — use only when inventory confirms they exist and their declared role matches the task.
 
 Prefer the active OpenAI model for orchestration. If the runtime exposes multiple models, use a cheaper model for broad scouts and a stronger model for synthesis or high-risk review. Never assume a model ID or API key; record the selected provider/model and fallback behavior.

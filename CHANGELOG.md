@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.0 — 2026-07-16
+
+**Codex-native distribution:**
+- Added a validated Codex plugin with native `loop-plan`, `loop-debug`, and `loop-audit` skills.
+- Added `npx loop-skills codex` / `install-codex` to stage the plugin in the personal marketplace and enable it through the Codex CLI.
+- Made every supported Codex workflow selectable during interactive or scripted installation, with safe dependency inclusion for `loop-debug`.
+- Adapted the workflows to Codex plans, bounded subagents, current web research, skills and MCP connectors, sandbox approvals, and outcome-level verification.
+- Added isolated installer, marketplace-preservation, stale-upgrade cleanup, package-boundary, and real Codex CLI installation coverage.
+
 ## v0.5.4 — 2026-07-15
 
 **Scope correction:**

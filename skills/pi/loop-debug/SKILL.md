@@ -24,6 +24,10 @@ Use the `loop_progress` tool throughout the loop. Initialize it before Phase 0 w
 
 Follow [`../references/adaptive-loop.md`](../references/adaptive-loop.md). At Seed, call `loop_inventory` and record the snapshot timestamp, active model/provider, available capabilities, and selected tier. Maintain an evidence ledger for the causal graph, hypotheses, similar cases, and test-audit claims. Use bounded reproduction and investigation budgets; escalate only when impact or uncertainty justifies it. Reconcile evidence after each round and stop on causal closure, diminishing returns, or budget exhaustion with residual risk documented.
 
+## Durable context and child contract
+
+Follow [`../references/context-management.md`](../references/context-management.md). Call `loop_context` with `snapshot` before fan-out and `checkpoint` before phase transitions. At each phase boundary, register the next bounded routine node with `register_next` and complete its token with `complete_next` before advancing. Implementation and destructive fixes always require an explicit approval marker; product decisions and failed quality gates pause. After approval, the runtime may trigger exactly one registered routine follow-up at a safe lifecycle boundary, so do not wait for a user nudge between routine DAG nodes. Keep the parent as controller and synthesizer; independent investigators use bounded fresh contexts and return one validated `pi.loop.handoff.v1`. Use a fork only for inherited-decision oracle review and RPC only for escalation. Default to two active workers, three only for explicitly high-risk work, and queue excess work. Stop/compact at 60/70/85% thresholds; unknown usage, failed compaction, retry exhaustion, and unsafe work pause autonomy; use `autonomy_status` for the reason.
+
 ## State and artifacts
 
 Derive a slug (lowercase kebab-case, max 40 characters). Store `.pi/plans/<slug>-debug.md` and a JSON sidecar with `phase`, `bug_signature`, `hypotheses`, `root_cause`, `impact`, `red_evidence`, `must_haves`, and `verification`. Resume only after showing state and asking whether to resume or restart.

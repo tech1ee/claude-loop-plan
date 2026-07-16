@@ -20,6 +20,25 @@ pi update --extensions
 
 The Claude Code installer below remains available for `~/.claude/` users.
 
+## Codex plugin installation
+
+```bash
+npx loop-skills codex
+# equivalent alias
+npx loop-skills install-codex
+```
+
+The command copies the Codex-native plugin to `~/plugins/loop-skills`, adds or updates its entry in the default personal marketplace at `~/.agents/plugins/marketplace.json`, and runs `codex plugin add loop-skills@<marketplace-name>`. Existing marketplace entries are preserved. If automatic enablement is unavailable, the installer leaves the plugin staged and prints the exact command to finish.
+
+Flags:
+
+- `--skills loop-plan,loop-debug,loop-audit` installs only the selected Codex workflows. Interactive installs show all supported workflows and select all by default; non-interactive installs include all when the flag is omitted. Selecting `loop-debug` automatically includes its `loop-plan` dependency.
+- `--dry-run` previews the plugin, marketplace, and enablement operations without writing.
+- `--force` replaces an existing Loop Skills plugin and marketplace entry without prompting.
+- `--no-enable` installs and registers the plugin but does not run `codex plugin add`.
+
+After installation, start a new Codex thread so the new skills are loaded. Invoke `$loop-plan`, `$loop-debug`, or `$loop-audit`; Codex can also select them implicitly from the task description.
+
 ## Commands
 
 ### Default — run the installer

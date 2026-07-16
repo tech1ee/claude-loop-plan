@@ -1,7 +1,7 @@
 {
   "name": "loop-skills",
-  "version": "0.5.4",
-  "description": "Research-driven planning, debugging, and audit skills for Pi, Claude Code, and other agents",
+  "version": "0.6.0",
+  "description": "Research-driven planning, debugging, and audit skills for Codex, Pi, and Claude Code",
   "type": "module",
   "bin": {
     "loop-skills": "dist/src/install.js",
@@ -15,11 +15,15 @@
     "extensions/loop-progress.ts",
     "extensions/loop-inventory.ts",
     "extensions/loop-evidence.ts",
+    "extensions/loop-context.ts",
+    "extensions/loop-context-state.ts",
+    "extensions/loop-handoff.ts",
     "skills/",
     "agents/",
     "bin/",
     "commands/",
     "templates/",
+    "plugins/",
     "checksums.txt"
   ],
   "dependencies": {
@@ -33,7 +37,7 @@
     "build": "tsc",
     "prepublishOnly": "npm run build",
     "check:extensions": "tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --skipLibCheck extensions/*.ts",
-    "test": "node --test dist/test/installer.test.js dist/test/pi-package.test.js && npm run check:extensions",
+    "test": "node --test dist/test/installer.test.js dist/test/pi-package.test.js dist/test/context-state.test.js dist/test/codex-plugin.test.js && npm run check:extensions",
     "test:e2e": "bash test/e2e-published.sh"
   },
   "repository": {
@@ -43,6 +47,8 @@
   "keywords": [
     "claude",
     "claude-code",
+    "codex",
+    "codex-plugin",
     "pi-package",
     "pi-coding-agent",
     "ai-agent",
@@ -58,7 +64,8 @@
     "extensions": [
       "./extensions/loop-progress.ts",
       "./extensions/loop-inventory.ts",
-      "./extensions/loop-evidence.ts"
+      "./extensions/loop-evidence.ts",
+      "./extensions/loop-context.ts"
     ]
   },
   "peerDependencies": {
